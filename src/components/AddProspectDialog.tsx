@@ -31,7 +31,7 @@ export function AddProspectDialog({ onAdded }: { onAdded?: () => void }) {
     githubUsername: "",
     website: "",
     country: "",
-    techStack: "",
+    // stack intentionally removed per spec
     personalizationHook: "",
     sourceType: "manual",
     sourceUrl: "",
@@ -55,7 +55,6 @@ export function AddProspectDialog({ onAdded }: { onAdded?: () => void }) {
         githubUsername: form.githubUsername || undefined,
         website: form.website || undefined,
         country: form.country || undefined,
-        techStack: form.techStack || undefined,
         personalizationHook: form.personalizationHook || undefined,
         sourceType: form.sourceType,
         sourceUrl: form.sourceUrl,
@@ -67,7 +66,7 @@ export function AddProspectDialog({ onAdded }: { onAdded?: () => void }) {
         setSuccess(`Créé : ${res.email}`);
         setForm({
           email: "", firstName: "", lastName: "", githubUsername: "",
-          website: "", country: "", techStack: "", personalizationHook: "",
+          website: "", country: "", personalizationHook: "",
           sourceType: "manual", sourceUrl: "", notes: "",
         });
         onAdded?.();
@@ -115,10 +114,6 @@ export function AddProspectDialog({ onAdded }: { onAdded?: () => void }) {
             <div className="col-span-2">
               <label className="text-[11px] font-[500] tracking-[0.08em] uppercase text-white/50">Site web</label>
               <Input value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="https://..." type="url" className="mt-1 bg-white/[0.04] border-white/[0.08]" />
-            </div>
-            <div className="col-span-2">
-              <label className="text-[11px] font-[500] tracking-[0.08em] uppercase text-white/50">Stack</label>
-              <Input value={form.techStack} onChange={(e) => setForm({ ...form, techStack: e.target.value })} placeholder="nextjs, rust, python" className="mt-1 bg-white/[0.04] border-white/[0.08]" />
             </div>
             <div className="col-span-2">
               <label className="text-[11px] font-[500] tracking-[0.08em] uppercase text-white/50">Hook perso</label>

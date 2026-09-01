@@ -18,7 +18,10 @@ export default defineSchema({
     personalizationHook: v.optional(v.string()),
     sourceType: v.string(),
     sourceUrl: v.string(),
+    /** not_contacted | contacted — replied is orthogonal */
     status: v.string(),
+    replied: v.optional(v.boolean()),
+    repliedAt: v.optional(v.number()),
     emailVerified: v.boolean(),
     createdAt: v.number(),
     lastContactedAt: v.optional(v.number()),
