@@ -2,7 +2,8 @@
 
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { useState } from "react";
+import { useState, useRef, useMemo } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -26,7 +27,11 @@ function GithubIcon(props: React.SVGProps<SVGSVGElement>) {
 function countryFlag(code?: string): string {
   const c = (code ?? "").trim().toUpperCase();
   if (c.length !== 2) return "🌍";
-  const map: Record<string, string> = { FR: "🇫🇷", US: "🇺🇸", GB: "🇬🇧", DE: "🇩🇪", ES: "🇪🇸", CA: "🇨🇦", BE: "🇧🇪", CH: "🇨🇭", NL: "🇳🇱", IT: "🇮🇹", PL: "🇵🇱", PT: "🇵🇹", IE: "🇮🇪", IL: "🇮🇱", AU: "🇦🇺", BR: "🇧🇷", IN: "🇮🇳", PK: "🇵🇰", EG: "🇪🇬", NG: "🇳🇬", MX: "🇲🇽", SE: "🇸🇪", DK: "🇩🇰", NO: "🇳🇴", JP: "🇯🇵", KR: "🇰🇷" };
+  const map: Record<string, string> = {
+    FR: "🇫🇷", US: "🇺🇸", GB: "🇬🇧", DE: "🇩🇪", ES: "🇪🇸", CA: "🇨🇦", BE: "🇧🇪", CH: "🇨🇭", NL: "🇳🇱", IT: "🇮🇹",
+    PL: "🇵🇱", PT: "🇵🇹", IE: "🇮🇪", AT: "🇦🇹", SE: "🇸🇪", DK: "🇩🇰", NO: "🇳🇴", FI: "🇫🇮", CN: "🇨🇳",
+    IL: "🇮🇱", AU: "🇦🇺", BR: "🇧🇷", IN: "🇮🇳", PK: "🇵🇰", EG: "🇪🇬", NG: "🇳🇬", JP: "🇯🇵", KR: "🇰🇷",
+  };
   if (map[c]) return map[c];
   const A = "A".charCodeAt(0);
   return String.fromCodePoint(...[...c].map((ch) => 0x1f1e6 + (ch.charCodeAt(0) - A)));
@@ -50,7 +55,7 @@ function rowBg(p: any): string {
   return "bg-transparent hover:bg-white/[0.025]";
 }
 
-const COUNTRIES = ["all", "FR", "US", "DE", "GB", "ES", "CA", "BE", "CH", "NL", "IT", "IN", "PK", "EG", "NG"];
+const COUNTRIES = ["all", "FR", "DE", "GB", "ES", "IT", "PL", "NL", "BE", "CH", "AT", "SE", "DK", "US", "CA", "CN"];
 
 function isConvexConfigured() {
   return !!process.env.NEXT_PUBLIC_CONVEX_URL;
@@ -84,7 +89,7 @@ export function ProspectsTable() {
           country,
           search: debouncedSearch || undefined,
           replied: repliedFilter === "all" ? undefined : repliedFilter === "replied",
-          limit: 400,
+          limit: 1200,
         }
       : "skip"
   );
@@ -94,13 +99,32 @@ export function ProspectsTable() {
   const updateProspect = useMutation(api.prospects.updateProspect);
   const removeProspect = useMutation(api.prospects.remove);
 
+  // virtualization — desktop table only
+  const parentRef = useRef<HTMLDivElement>(null);
+  const count = prospects?.length ?? 0;
+  const virtualizer = useVirtualizer({
+    count,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 38,
+    overscan: 12,
+  });
+  const virtualItems = virtualizer.getVirtualItems();
+  const totalSize = virtualizer.getTotalSize();
+
+  const progress = useMemo(() => {
+    if (!prospects) return null;
+    const contacted = prospects.filter((p: any) => p.status === "contacted" || p.status === "sent").length;
+    const replied = prospects.filter((p: any) => !!p.replied).length;
+    return { total: prospects.length, contacted, replied };
+  }, [prospects]);
+
   if (!isConfigured) return <div className="text-[11px] text-white/40">Convex non connecté.</div>;
 
   const loading = prospects === undefined;
 
   return (
     <div className="space-y-2">
-      {/* compact toolbar — no title/legend, list starts high */}
+      {/* toolbar */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/20" />
@@ -149,215 +173,172 @@ export function ProspectsTable() {
         <div className="border border-dashed border-white/[0.07] rounded-[10px] py-10 text-center text-[12px] tracking-[-0.01em] text-white/30">Aucun prospect · anti-doublon actif</div>
       ) : (
         <>
-          {/* Desktop — compact rows */}
+          {/* Desktop — virtualized */}
           <div className="hidden md:block border border-white/[0.06] rounded-[10px] overflow-hidden bg-[#040405]">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b border-white/[0.06] bg-white/[0.03]">
-                    <th className="px-2.5 py-2 text-[10px] font-[500] tracking-[0.08em] uppercase text-white/30">Nom</th>
-                    <th className="px-2.5 py-2 text-[10px] font-[500] tracking-[0.08em] uppercase text-white/30">About</th>
-                    <th className="px-2.5 py-2 text-[10px] font-[500] tracking-[0.08em] uppercase text-white/30">Site</th>
-                    <th className="px-2.5 py-2 text-[10px] font-[500] tracking-[0.08em] uppercase text-white/30">Email</th>
-                    <th className="px-2.5 py-2 text-[10px] font-[500] tracking-[0.08em] uppercase text-white/30">GitHub</th>
-                    <th className="px-2.5 py-2 text-[10px] font-[500] tracking-[0.08em] uppercase text-white/30 text-center">Pays</th>
-                    <th className="px-2.5 py-2 text-[10px] font-[500] tracking-[0.08em] uppercase text-white/30 text-center">Contacté</th>
-                    <th className="px-2.5 py-2 text-[10px] font-[500] tracking-[0.08em] uppercase text-white/30 text-center">Réponse</th>
-                    <th className="px-2.5 py-2 w-[28px]"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/[0.04]">
-                  {prospects.map((p: any) => {
-                    const contacted = p.status === "contacted" || p.status === "sent" || p.status === "replied";
-                    const hook: string = p.personalizationHook ?? "";
-                    const pitch = hook ? `I visited your website and was impressed by ${hook.charAt(0).toLowerCase() + hook.slice(1)} — would love to offer you free access to Suzu.` : "";
-                    return (
-                      <tr key={p._id} className={`transition-colors ${rowBg(p)}`}>
-                        <td
-                          className="px-2.5 py-1.5 align-top"
-                          onDoubleClick={() => {
-                            setEditingId(p._id);
-                            setEditingName(displayName(p));
-                          }}
-                          title="Double-clique pour éditer"
-                        >
-                          {editingId === p._id ? (
-                            <input
-                              autoFocus
-                              value={editingName}
-                              onChange={(e) => setEditingName(e.target.value)}
-                              onBlur={async () => {
-                                const v = editingName.trim();
-                                if (v && v !== displayName(p)) {
-                                  await updateProspect({ id: p._id, firstName: v });
-                                }
-                                setEditingId(null);
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                                if (e.key === "Escape") setEditingId(null);
-                              }}
-                              className="h-6 w-[112px] bg-[#161616] border border-white/20 rounded-[6px] px-1.5 text-[12px] font-[500] tracking-[-0.01em] text-white placeholder:text-white/20 focus:outline-none focus:border-white/30"
-                              placeholder="Prénom"
-                            />
-                          ) : (
-                            <span className="text-[12px] font-[500] tracking-[-0.01em] text-white/85 cursor-text select-none hover:text-white">{displayName(p)}</span>
-                          )}
-                        </td>
-                        <td
-                          className="px-2.5 py-1.5 align-top max-w-[280px]"
-                          onDoubleClick={() => {
-                            setEditingHookId(p._id);
-                            setEditingHook(hook);
-                          }}
-                          title={hook ? `${hook}\n\nDouble-clique pour éditer` : "Double-clique pour ajouter un About"}
-                        >
-                          {editingHookId === p._id ? (
-                            <input
-                              autoFocus
-                              value={editingHook}
-                              onChange={(e) => setEditingHook(e.target.value)}
-                              onBlur={async () => {
-                                const v = editingHook.trim();
-                                if (v !== hook) await updateProspect({ id: p._id, personalizationHook: v || undefined });
-                                setEditingHookId(null);
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                                if (e.key === "Escape") setEditingHookId(null);
-                              }}
-                              className="h-6 w-[260px] bg-[#161616] border border-white/20 rounded-[6px] px-1.5 text-[11px] tracking-[-0.01em] text-white placeholder:text-white/20 focus:outline-none focus:border-white/30"
-                              placeholder="About — ex: builds SaaS with Next.js…"
-                            />
-                          ) : hook ? (
-                            <div className="group flex items-start gap-1.5">
-                              <span className="text-[11px] leading-[1.35] tracking-[-0.01em] text-white/45 line-clamp-2 cursor-text select-none group-hover:text-white/65">{hook}</span>
-                              <button
-                                title="Copier pitch personnalisé"
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  await navigator.clipboard.writeText(`Hey ${displayName(p)}, ${pitch}`);
-                                  setCopiedId(p._id);
-                                  setTimeout(() => setCopiedId(null), 1500);
-                                }}
-                                className="shrink-0 mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-[5px] border border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.08] text-white/30 hover:text-white/70"
-                              >
-                                {copiedId === p._id ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
-                              </button>
-                            </div>
-                          ) : (
-                            <span className="text-[11px] text-white/15 cursor-text">—</span>
-                          )}
-                        </td>
-                        <td className="px-2.5 py-1.5 align-top">
-                          {p.website ? (
-                            <a href={p.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] tracking-[-0.01em] text-white/40 hover:text-white">
-                              <Globe className="h-3 w-3 shrink-0" />
-                              <span className="truncate max-w-[140px]">{siteHost(p.website) ?? "Site"}</span>
-                            </a>
-                          ) : (
-                            <span className="text-[11px] text-white/15">—</span>
-                          )}
-                        </td>
-                        <td className="px-2.5 py-1.5 align-top">
-                          <a href={`mailto:${p.email}`} className="text-[11px] tracking-[-0.01em] text-white/55 hover:text-white underline decoration-white/10 underline-offset-4">
-                            {p.email}
-                          </a>
-                        </td>
-                        <td className="px-2.5 py-1.5 align-top">
-                          {p.githubUsername ? (
-                            <a href={`https://github.com/${p.githubUsername}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] tracking-[-0.01em] text-white/55 hover:text-white">
-                              <GithubIcon className="h-3 w-3" />{p.githubUsername}
-                            </a>
-                          ) : (
-                            <span className="text-[11px] text-white/15">—</span>
-                          )}
-                        </td>
-                        <td className="px-2.5 py-1.5 text-center align-top">
-                          <span className="inline-flex items-center gap-1 text-[11px]">
-                            <span className="text-[13px] leading-none">{countryFlag(p.country)}</span>
-                            <span className="text-white/50 font-[500]">{(p.country ?? "—").toUpperCase()}</span>
-                          </span>
-                        </td>
-                        <td className="px-2.5 py-1.5 text-center align-top">
-                          <input
-                            type="checkbox"
-                            checked={contacted}
-                            onChange={(e) => setContacted({ id: p._id, contacted: e.target.checked })}
-                            className="h-3.5 w-3.5 rounded-full align-middle accent-sky-500"
-                            title="Contacté = bleu"
-                          />
-                        </td>
-                        <td className="px-2.5 py-1.5 text-center align-top">
-                          <input
-                            type="checkbox"
-                            checked={!!p.replied}
-                            onChange={(e) => setReplied({ id: p._id, replied: e.target.checked })}
-                            className="h-3.5 w-3.5 rounded align-middle accent-emerald-500"
-                            title="Réponse = vert"
-                          />
-                        </td>
-                        <td className="px-2.5 py-1.5 align-top">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger render={<button className="inline-flex h-6 w-6 items-center justify-center rounded-[6px] border border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.07] text-white/40"><MoreHorizontal className="h-3 w-3" /></button>}></DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="bg-[#0f0f0f] border-white/[0.08] text-white min-w-[160px]">
-                              <DropdownMenuItem onClick={() => setContacted({ id: p._id, contacted: !contacted })} className="text-[12px]">{contacted ? "Retirer contacté" : "Marquer contacté"}</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => setReplied({ id: p._id, replied: !p.replied })} className="text-[12px]">{p.replied ? "Retirer réponse" : "Marquer réponse"}</DropdownMenuItem>
-                              {hook && <DropdownMenuItem onClick={async () => { await navigator.clipboard.writeText(`Hey ${displayName(p)}, ${pitch}`); setCopiedId(p._id); setTimeout(()=>setCopiedId(null),1500); }} className="text-[12px] gap-1"><Copy className="h-3 w-3" />Copier pitch</DropdownMenuItem>}
-                              {p.sourceUrl && <DropdownMenuItem onClick={() => window.open(p.sourceUrl, "_blank")} className="text-[12px] gap-1"><ExternalLink className="h-3 w-3" />Source</DropdownMenuItem>}
-                              <DropdownMenuItem className="text-[12px] text-red-300 focus:text-red-200 focus:bg-red-500/10" onClick={() => { if (confirm(`Supprimer ${p.email} ?`)) removeProspect({ id: p._id }); }}>
-                                <Trash2 className="h-3 w-3" /> Supprimer
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            {/* header */}
+            <div className="border-b border-white/[0.06] bg-white/[0.03] flex text-[10px] font-[500] tracking-[0.08em] uppercase text-white/30">
+              <div className="px-2.5 py-2 w-[118px] shrink-0">Nom</div>
+              <div className="px-2.5 py-2 flex-1 min-w-[220px] max-w-[320px]">About</div>
+              <div className="px-2.5 py-2 w-[148px] shrink-0">Site</div>
+              <div className="px-2.5 py-2 flex-1 min-w-[180px]">Email</div>
+              <div className="px-2.5 py-2 w-[140px] shrink-0">GitHub</div>
+              <div className="px-2.5 py-2 w-[74px] shrink-0 text-center">Pays</div>
+              <div className="px-2.5 py-2 w-[72px] shrink-0 text-center">Contacté</div>
+              <div className="px-2.5 py-2 w-[72px] shrink-0 text-center">Réponse</div>
+              <div className="px-2.5 py-2 w-[32px] shrink-0" />
             </div>
-            <div className="border-t border-white/[0.06] bg-white/[0.02] px-3 py-1.5 text-[10px] tracking-[-0.01em] text-white/25">
-              {prospects.length} · noir = non contacté · bleu = contacté · vert = réponse · double-clic Nom/About pour éditer · 📋 copie le pitch
+
+            {/* virtual scroll — fixed height, 1000 rows = instant */}
+            <div ref={parentRef} className="overflow-auto max-h-[calc(100vh-168px)] overscroll-contain" style={{ contain: "strict" }}>
+              <div style={{ height: `${totalSize}px`, position: "relative", width: "100%" }}>
+                {virtualItems.map((vr) => {
+                  const p: any = (prospects as any[])[vr.index];
+                  const contacted = p.status === "contacted" || p.status === "sent" || p.status === "replied";
+                  const hook: string = p.personalizationHook ?? "";
+                  const pitch = hook ? `I visited your website and was impressed by ${hook.charAt(0).toLowerCase() + hook.slice(1)} — would love to offer you free access to Suzu.` : "";
+                  return (
+                    <div
+                      key={p._id}
+                      data-index={vr.index}
+                      style={{ position: "absolute", top: 0, left: 0, width: "100%", transform: `translateY(${vr.start}px)` }}
+                      className={`flex items-center border-b border-white/[0.04] h-[38px] transition-colors ${rowBg(p)}`}
+                    >
+                      <div
+                        className="px-2.5 w-[118px] shrink-0 truncate"
+                        onDoubleClick={() => { setEditingId(p._id); setEditingName(displayName(p)); }}
+                        title="Double-clique pour éditer"
+                      >
+                        {editingId === p._id ? (
+                          <input
+                            autoFocus
+                            value={editingName}
+                            onChange={(e) => setEditingName(e.target.value)}
+                            onBlur={async () => {
+                              const v = editingName.trim();
+                              if (v && v !== displayName(p)) await updateProspect({ id: p._id, firstName: v });
+                              setEditingId(null);
+                            }}
+                            onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); if (e.key === "Escape") setEditingId(null); }}
+                            className="h-6 w-[104px] bg-[#161616] border border-white/20 rounded-[6px] px-1.5 text-[12px] font-[500] text-white focus:outline-none focus:border-white/30"
+                            placeholder="Prénom"
+                          />
+                        ) : (
+                          <span className="text-[12px] font-[500] tracking-[-0.01em] text-white/85 cursor-text select-none hover:text-white truncate block">{displayName(p)}</span>
+                        )}
+                      </div>
+
+                      <div
+                        className="px-2.5 flex-1 min-w-[220px] max-w-[320px] truncate"
+                        onDoubleClick={() => { setEditingHookId(p._id); setEditingHook(hook); }}
+                        title={hook ? `${hook}\n\nDouble-clique pour éditer` : "Double-clique pour ajouter About"}
+                      >
+                        {editingHookId === p._id ? (
+                          <input
+                            autoFocus
+                            value={editingHook}
+                            onChange={(e) => setEditingHook(e.target.value)}
+                            onBlur={async () => {
+                              const v = editingHook.trim();
+                              if (v !== hook) await updateProspect({ id: p._id, personalizationHook: v || undefined });
+                              setEditingHookId(null);
+                            }}
+                            onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); if (e.key === "Escape") setEditingHookId(null); }}
+                            className="h-6 w-[240px] bg-[#161616] border border-white/20 rounded-[6px] px-1.5 text-[11px] text-white focus:outline-none focus:border-white/30"
+                            placeholder="About…"
+                          />
+                        ) : hook ? (
+                          <div className="group flex items-center gap-1.5 min-w-0">
+                            <span className="text-[11px] leading-[1.35] tracking-[-0.01em] text-white/45 truncate cursor-text select-none group-hover:text-white/65 flex-1 min-w-0">{hook}</span>
+                            <button
+                              title="Copier pitch"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                await navigator.clipboard.writeText(`Hey ${displayName(p)}, ${pitch}`);
+                                setCopiedId(p._id); setTimeout(() => setCopiedId(null), 1500);
+                              }}
+                              className="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded-[5px] border border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.08] text-white/30 hover:text-white/70"
+                            >
+                              {copiedId === p._id ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-white/15 cursor-text">—</span>
+                        )}
+                      </div>
+
+                      <div className="px-2.5 w-[148px] shrink-0 truncate">
+                        {p.website ? (
+                          <a href={p.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] tracking-[-0.01em] text-white/40 hover:text-white truncate">
+                            <Globe className="h-3 w-3 shrink-0" /><span className="truncate">{siteHost(p.website) ?? "Site"}</span>
+                          </a>
+                        ) : <span className="text-[11px] text-white/15">—</span>}
+                      </div>
+
+                      <div className="px-2.5 flex-1 min-w-[180px] truncate">
+                        <a href={`mailto:${p.email}`} className="text-[11px] tracking-[-0.01em] text-white/55 hover:text-white underline decoration-white/10 underline-offset-4 truncate block">
+                          {p.email}
+                        </a>
+                      </div>
+
+                      <div className="px-2.5 w-[140px] shrink-0 truncate">
+                        {p.githubUsername ? (
+                          <a href={`https://github.com/${p.githubUsername}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-white/55 hover:text-white truncate">
+                            <GithubIcon className="h-3 w-3 shrink-0" />{p.githubUsername}
+                          </a>
+                        ) : <span className="text-[11px] text-white/15">—</span>}
+                      </div>
+
+                      <div className="px-2.5 w-[74px] shrink-0 text-center">
+                        <span className="inline-flex items-center gap-1 text-[11px]"><span className="text-[13px] leading-none">{countryFlag(p.country)}</span><span className="text-white/50 font-[500]">{(p.country ?? "—").toUpperCase()}</span></span>
+                      </div>
+
+                      <div className="px-2.5 w-[72px] shrink-0 text-center">
+                        <input type="checkbox" checked={contacted} onChange={(e) => setContacted({ id: p._id, contacted: e.target.checked })} className="h-3.5 w-3.5 rounded-full align-middle accent-sky-500" title="Contacté = bleu" />
+                      </div>
+
+                      <div className="px-2.5 w-[72px] shrink-0 text-center">
+                        <input type="checkbox" checked={!!p.replied} onChange={(e) => setReplied({ id: p._id, replied: e.target.checked })} className="h-3.5 w-3.5 rounded align-middle accent-emerald-500" title="Réponse = vert" />
+                      </div>
+
+                      <div className="px-2.5 w-[32px] shrink-0 flex justify-center">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger render={<button className="inline-flex h-6 w-6 items-center justify-center rounded-[6px] border border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.07] text-white/40"><MoreHorizontal className="h-3 w-3" /></button>}></DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-[#0f0f0f] border-white/[0.08] text-white min-w-[160px]">
+                            <DropdownMenuItem onClick={() => setContacted({ id: p._id, contacted: !contacted })} className="text-[12px]">{contacted ? "Retirer contacté" : "Marquer contacté"}</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setReplied({ id: p._id, replied: !p.replied })} className="text-[12px]">{p.replied ? "Retirer réponse" : "Marquer réponse"}</DropdownMenuItem>
+                            {hook && <DropdownMenuItem onClick={async () => { await navigator.clipboard.writeText(`Hey ${displayName(p)}, ${pitch}`); setCopiedId(p._id); setTimeout(()=>setCopiedId(null),1500); }} className="text-[12px] gap-1"><Copy className="h-3 w-3" />Copier pitch</DropdownMenuItem>}
+                            {p.sourceUrl && <DropdownMenuItem onClick={() => window.open(p.sourceUrl, "_blank")} className="text-[12px] gap-1"><ExternalLink className="h-3 w-3" />Source</DropdownMenuItem>}
+                            <DropdownMenuItem className="text-[12px] text-red-300 focus:text-red-200 focus:bg-red-500/10" onClick={() => { if (confirm(`Supprimer ${p.email} ?`)) removeProspect({ id: p._id }); }}><Trash2 className="h-3 w-3" /> Supprimer</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="border-t border-white/[0.06] bg-white/[0.02] px-3 py-1.5 text-[10px] tracking-[-0.01em] text-white/25 flex justify-between">
+              <span>{progress ? `${progress.total} prospects · ${progress.contacted} contactés · ${progress.replied} réponses` : `${count} prospects`} · virtuel 1000+ · noir/bleu/vert · double-clic Nom/About</span>
+              <span className="text-white/20">{count >= 1000 ? "1000 ✓" : `${count}/1000`}</span>
             </div>
           </div>
 
-          {/* Mobile */}
+          {/* Mobile — gardé non virtualisé (limité aux 1200, ok sur mobile) */}
           <div className="grid gap-2 md:hidden">
-            {prospects.map((p: any) => {
+            {(prospects as any[]).slice(0, 200).map((p: any) => {
               const contacted = p.status === "contacted" || p.status === "sent" || p.status === "replied";
               return (
                 <div key={p._id} className={`border rounded-[10px] p-3 flex flex-col gap-2 ${p.replied ? "border-emerald-500/25 bg-emerald-500/[0.08]" : contacted ? "border-sky-400/25 bg-sky-500/[0.06]" : "border-white/[0.06] bg-white/[0.015]"}`}>
                   <div className="flex items-center justify-between gap-3">
                     <p
                       className="text-[12px] font-[600] tracking-[-0.02em] truncate cursor-text select-none hover:text-white"
-                      onDoubleClick={() => {
-                        setEditingId(p._id);
-                        setEditingName(displayName(p));
-                      }}
+                      onDoubleClick={() => { setEditingId(p._id); setEditingName(displayName(p)); }}
                       title="Double-clique pour éditer"
                     >
                       {editingId === p._id ? (
-                        <input
-                          autoFocus
-                          value={editingName}
-                          onChange={(e) => setEditingName(e.target.value)}
-                          onBlur={async () => {
-                            const v = editingName.trim();
-                            if (v && v !== displayName(p)) await updateProspect({ id: p._id, firstName: v });
-                            setEditingId(null);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                            if (e.key === "Escape") setEditingId(null);
-                          }}
-                          className="h-6 w-[112px] bg-[#161616] border border-white/20 rounded-[6px] px-1.5 text-[12px] font-[600] text-white placeholder:text-white/20 focus:outline-none focus:border-white/30"
-                          placeholder="Prénom"
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      ) : (
-                        displayName(p)
-                      )}
+                        <input autoFocus value={editingName} onChange={(e) => setEditingName(e.target.value)} onBlur={async () => { const v = editingName.trim(); if (v && v !== displayName(p)) await updateProspect({ id: p._id, firstName: v }); setEditingId(null); }} onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); if (e.key === "Escape") setEditingId(null); }} className="h-6 w-[112px] bg-[#161616] border border-white/20 rounded-[6px] px-1.5 text-[12px] font-[600] text-white focus:outline-none focus:border-white/30" placeholder="Prénom" onClick={(e) => e.stopPropagation()} />
+                      ) : displayName(p)}
                     </p>
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="text-[14px]">{countryFlag(p.country)}</span>
@@ -370,6 +351,7 @@ export function ProspectsTable() {
                 </div>
               );
             })}
+            {(prospects as any[]).length > 200 && <div className="text-[11px] text-white/30 text-center py-2">+ {(prospects as any[]).length - 200} autres — filtre ou passe sur desktop</div>}
           </div>
         </>
       )}
