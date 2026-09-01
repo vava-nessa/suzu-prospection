@@ -62,6 +62,8 @@ export function ProspectsTable() {
   const [repliedFilter, setRepliedFilter] = useState("all");
   const [country, setCountry] = useState("all");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
 
   const handleSearchChange = (v: string) => {
     setSearch(v);
@@ -86,6 +88,7 @@ export function ProspectsTable() {
 
   const setContacted = useMutation(api.prospects.setContacted);
   const setReplied = useMutation(api.prospects.setReplied);
+  const updateProspect = useMutation(api.prospects.updateProspect);
   const removeProspect = useMutation(api.prospects.remove);
 
   if (!isConfigured) return <div className="text-[11px] text-white/40">Convex non connecté.</div>;
@@ -164,7 +167,37 @@ export function ProspectsTable() {
                     const contacted = p.status === "contacted" || p.status === "sent" || p.status === "replied";
                     return (
                       <tr key={p._id} className={`transition-colors ${rowBg(p)}`}>
-                        <td className="px-2.5 py-1.5"><span className="text-[12px] font-[500] tracking-[-0.01em] text-white/85">{displayName(p)}</span></td>
+                        <td
+                          className="px-2.5 py-1.5"
+                          onDoubleClick={() => {
+                            setEditingId(p._id);
+                            setEditingName(displayName(p));
+                          }}
+                          title="Double-clique pour éditer"
+                        >
+                          {editingId === p._id ? (
+                            <input
+                              autoFocus
+                              value={editingName}
+                              onChange={(e) => setEditingName(e.target.value)}
+                              onBlur={async () => {
+                                const v = editingName.trim();
+                                if (v && v !== displayName(p)) {
+                                  await updateProspect({ id: p._id, firstName: v });
+                                }
+                                setEditingId(null);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                                if (e.key === "Escape") setEditingId(null);
+                              }}
+                              className="h-6 w-[112px] bg-[#161616] border border-white/20 rounded-[6px] px-1.5 text-[12px] font-[500] tracking-[-0.01em] text-white placeholder:text-white/20 focus:outline-none focus:border-white/30"
+                              placeholder="Prénom"
+                            />
+                          ) : (
+                            <span className="text-[12px] font-[500] tracking-[-0.01em] text-white/85 cursor-text select-none hover:text-white">{displayName(p)}</span>
+                          )}
+                        </td>
                         <td className="px-2.5 py-1.5">
                           {p.website ? (
                             <a href={p.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] tracking-[-0.01em] text-white/40 hover:text-white">
@@ -244,7 +277,36 @@ export function ProspectsTable() {
               return (
                 <div key={p._id} className={`border rounded-[10px] p-3 flex items-center justify-between gap-3 ${p.replied ? "border-emerald-500/25 bg-emerald-500/[0.08]" : contacted ? "border-sky-400/25 bg-sky-500/[0.06]" : "border-white/[0.06] bg-white/[0.015]"}`}>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[12px] font-[600] tracking-[-0.02em] truncate">{displayName(p)}</p>
+                    <p
+                      className="text-[12px] font-[600] tracking-[-0.02em] truncate cursor-text select-none hover:text-white"
+                      onDoubleClick={() => {
+                        setEditingId(p._id);
+                        setEditingName(displayName(p));
+                      }}
+                      title="Double-clique pour éditer"
+                    >
+                      {editingId === p._id ? (
+                        <input
+                          autoFocus
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                          onBlur={async () => {
+                            const v = editingName.trim();
+                            if (v && v !== displayName(p)) await updateProspect({ id: p._id, firstName: v });
+                            setEditingId(null);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                            if (e.key === "Escape") setEditingId(null);
+                          }}
+                          className="h-6 w-[112px] bg-[#161616] border border-white/20 rounded-[6px] px-1.5 text-[12px] font-[600] text-white placeholder:text-white/20 focus:outline-none focus:border-white/30"
+                          placeholder="Prénom"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      ) : (
+                        displayName(p)
+                      )}
+                    </p>
                     <p className="text-[10px] tracking-[-0.01em] text-white/35 truncate">{p.email} {p.githubUsername ? `· ${p.githubUsername}` : ""}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
