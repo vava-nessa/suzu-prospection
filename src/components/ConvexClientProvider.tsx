@@ -7,14 +7,9 @@ import { ReactNode, useMemo } from "react";
 export function ConvexClientProvider({ children }: { children: ReactNode }) {
   const client = useMemo(() => {
     const url = process.env.NEXT_PUBLIC_CONVEX_URL;
-    if (!url) return null;
-    try {
-      return new ConvexReactClient(url);
-    } catch {
-      return null;
-    }
+    if (!url) return null as unknown as ConvexReactClient;
+    return new ConvexReactClient(url);
   }, []);
-
   if (!client) return <>{children}</>;
   return <ConvexAuthProvider client={client}>{children}</ConvexAuthProvider>;
 }
