@@ -62,20 +62,19 @@ export function AddProspectDialog({ onAdded }: { onAdded?: () => void }) {
         notes: form.notes || undefined,
       });
       if (res.status === "skipped_duplicate" || res.status === "skipped_duplicate_github") {
-        setError(`Doublon détecté — déjà présent : ${res.email}`);
+        setError(`Doublon — déjà présent : ${res.email}`);
       } else {
-        setSuccess(`Prospect créé : ${res.email}`);
+        setSuccess(`Créé : ${res.email}`);
         setForm({
           email: "", firstName: "", lastName: "", githubUsername: "",
           website: "", country: "", techStack: "", personalizationHook: "",
           sourceType: "manual", sourceUrl: "", notes: "",
         });
         onAdded?.();
-        setTimeout(() => setOpen(false), 900);
+        setTimeout(() => setOpen(false), 800);
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setError(msg);
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
@@ -83,53 +82,53 @@ export function AddProspectDialog({ onAdded }: { onAdded?: () => void }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<button className="inline-flex h-8 items-center gap-2 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"><Plus className="h-4 w-4" /> Ajouter un prospect</button>}></DialogTrigger>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogTrigger render={<button className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white px-3.5 text-[13px] font-[600] tracking-[-0.01em] text-black hover:bg-white/90"> <Plus className="h-3.5 w-3.5" /> Ajouter un prospect</button>}></DialogTrigger>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto border-white/[0.08] bg-[#0f0f0f] text-white">
         <DialogHeader>
-          <DialogTitle>Ajouter un prospect</DialogTitle>
-          <DialogDescription>
-            Anti-doublon actif sur email (insensible à la casse) + GitHub. SourceUrl = preuve RGPD.
+          <DialogTitle className="tracking-[-0.03em]">Ajouter un prospect</DialogTitle>
+          <DialogDescription className="text-white/40 text-[13px]">
+            Anti-doublon sur email + GitHub. sourceUrl = preuve RGPD.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="grid gap-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
-              <label className="text-xs font-medium">Email *</label>
-              <Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="alex@exemple.com" type="email" required />
+              <label className="text-[11px] font-[500] tracking-[0.08em] uppercase text-white/50">Email *</label>
+              <Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="alex@exemple.com" type="email" required className="mt-1 bg-white/[0.04] border-white/[0.08] focus-visible:border-white/15" />
             </div>
             <div>
-              <label className="text-xs font-medium">Prénom</label>
-              <Input value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} placeholder="Alex" />
+              <label className="text-[11px] font-[500] tracking-[0.08em] uppercase text-white/50">Prénom</label>
+              <Input value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} placeholder="Alex" className="mt-1 bg-white/[0.04] border-white/[0.08]" />
             </div>
             <div>
-              <label className="text-xs font-medium">Nom</label>
-              <Input value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} placeholder="Dupont" />
+              <label className="text-[11px] font-[500] tracking-[0.08em] uppercase text-white/50">Nom</label>
+              <Input value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} placeholder="Dupont" className="mt-1 bg-white/[0.04] border-white/[0.08]" />
             </div>
             <div>
-              <label className="text-xs font-medium">GitHub</label>
-              <Input value={form.githubUsername} onChange={(e) => setForm({ ...form, githubUsername: e.target.value })} placeholder="octocat" />
+              <label className="text-[11px] font-[500] tracking-[0.08em] uppercase text-white/50">GitHub</label>
+              <Input value={form.githubUsername} onChange={(e) => setForm({ ...form, githubUsername: e.target.value })} placeholder="octocat" className="mt-1 bg-white/[0.04] border-white/[0.08]" />
             </div>
             <div>
-              <label className="text-xs font-medium">Pays (ISO2)</label>
-              <Input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} placeholder="FR" maxLength={2} />
+              <label className="text-[11px] font-[500] tracking-[0.08em] uppercase text-white/50">Pays</label>
+              <Input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} placeholder="FR" maxLength={2} className="mt-1 bg-white/[0.04] border-white/[0.08]" />
             </div>
             <div className="col-span-2">
-              <label className="text-xs font-medium">Site web</label>
-              <Input value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="https://..." type="url" />
+              <label className="text-[11px] font-[500] tracking-[0.08em] uppercase text-white/50">Site web</label>
+              <Input value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="https://..." type="url" className="mt-1 bg-white/[0.04] border-white/[0.08]" />
             </div>
             <div className="col-span-2">
-              <label className="text-xs font-medium">Stack</label>
-              <Input value={form.techStack} onChange={(e) => setForm({ ...form, techStack: e.target.value })} placeholder="nextjs, rust, python" />
+              <label className="text-[11px] font-[500] tracking-[0.08em] uppercase text-white/50">Stack</label>
+              <Input value={form.techStack} onChange={(e) => setForm({ ...form, techStack: e.target.value })} placeholder="nextjs, rust, python" className="mt-1 bg-white/[0.04] border-white/[0.08]" />
             </div>
             <div className="col-span-2">
-              <label className="text-xs font-medium">Hook personnalisation</label>
-              <Input value={form.personalizationHook} onChange={(e) => setForm({ ...form, personalizationHook: e.target.value })} placeholder="a build un CLI Rust pour parser du PDF" />
+              <label className="text-[11px] font-[500] tracking-[0.08em] uppercase text-white/50">Hook perso</label>
+              <Input value={form.personalizationHook} onChange={(e) => setForm({ ...form, personalizationHook: e.target.value })} placeholder="a build un CLI Rust pour parser du PDF" className="mt-1 bg-white/[0.04] border-white/[0.08]" />
             </div>
             <div>
-              <label className="text-xs font-medium">Source type</label>
+              <label className="text-[11px] font-[500] tracking-[0.08em] uppercase text-white/50">Source type</label>
               <Select value={form.sourceType} onValueChange={(v: string | null) => setForm({ ...form, sourceType: v ?? "manual" })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
+                <SelectTrigger className="mt-1 bg-white/[0.04] border-white/[0.08]"><SelectValue /></SelectTrigger>
+                <SelectContent className="border-white/[0.08] bg-[#0f0f0f] text-white">
                   <SelectItem value="manual">manual</SelectItem>
                   <SelectItem value="github">github</SelectItem>
                   <SelectItem value="website">website</SelectItem>
@@ -140,20 +139,16 @@ export function AddProspectDialog({ onAdded }: { onAdded?: () => void }) {
               </Select>
             </div>
             <div>
-              <label className="text-xs font-medium">Source URL *</label>
-              <Input value={form.sourceUrl} onChange={(e) => setForm({ ...form, sourceUrl: e.target.value })} placeholder="https://github.com/..." required />
-            </div>
-            <div className="col-span-2">
-              <label className="text-xs font-medium">Notes</label>
-              <Input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Notes internes" />
+              <label className="text-[11px] font-[500] tracking-[0.08em] uppercase text-white/50">Source URL *</label>
+              <Input value={form.sourceUrl} onChange={(e) => setForm({ ...form, sourceUrl: e.target.value })} placeholder="https://github.com/..." required className="mt-1 bg-white/[0.04] border-white/[0.08]" />
             </div>
           </div>
 
-          {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{error}</p>}
-          {success && <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-3 py-2">{success}</p>}
+          {error && <p className="text-[13px] tracking-[-0.01em] text-red-200 bg-red-500/10 border border-red-500/20 rounded-[10px] px-3 py-2">{error}</p>}
+          {success && <p className="text-[13px] tracking-[-0.01em] text-emerald-200 bg-emerald-500/10 border border-emerald-500/20 rounded-[10px] px-3 py-2">{success}</p>}
 
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? "Ajout..." : "Créer le prospect"}
+          <Button type="submit" disabled={loading} className="w-full h-9 bg-white text-black hover:bg-white/90 text-[13px] font-[600]">
+            {loading ? "…" : "Créer le prospect"}
           </Button>
         </form>
       </DialogContent>

@@ -9,7 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@auth/core": "0.41.1",
     "@base-ui/react": "^1.7.0",
+    "@convex-dev/auth": "0.0.95",
     "@tanstack/react-query": "5.102.8",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

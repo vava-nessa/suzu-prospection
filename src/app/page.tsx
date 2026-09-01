@@ -12,8 +12,8 @@ function AuthedApp() {
 
   if (isLoading || viewer === undefined) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="text-sm text-muted-foreground animate-pulse">Chargement...</div>
+      <div className="min-h-[60vh] grid place-items-center">
+        <div className="text-[13px] tracking-[-0.01em] text-muted-foreground">Chargement…</div>
       </div>
     );
   }
@@ -27,22 +27,28 @@ function AuthedApp() {
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-white dark:from-zinc-950 dark:to-black">
-      <header className="sticky top-0 z-10 backdrop-blur bg-white/70 dark:bg-zinc-950/70 border-b">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm">S</div>
-            <span className="font-semibold tracking-tight">suzu-prospection</span>
-            <span className="hidden sm:inline text-xs text-muted-foreground ml-2">CRM · Convex · privé</span>
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Header — Linear: hairline border, full bleed, no shadow */}
+      <header className="sticky top-0 z-20 border-b border-white/[0.06] bg-[#0a0a0a]/80 backdrop-blur-xl">
+        <div className="flex h-[56px] items-center justify-between gap-4 px-6 lg:px-8">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="h-7 w-7 rounded-[8px] bg-white text-black grid place-items-center font-[700] text-[12px] tracking-[-0.02em]">S</div>
+            <span className="text-[14px] font-[600] tracking-[-0.03em]">suzu-prospection</span>
+            <span className="hidden md:inline text-[11px] tracking-[0.08em] uppercase text-white/30 ml-2">CRM · Convex · privé</span>
           </div>
           <HeaderAuth />
         </div>
       </header>
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+
+      {/* Full-width content — Linear uses 100% with max 1600 but flush */}
+      <main className="px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
         <AuthedApp />
       </main>
-      <footer className="max-w-6xl mx-auto px-4 sm:px-6 py-8 text-center text-xs text-muted-foreground border-t mt-8">
-        Accès restreint à vanessadepraute@gmail.com · Anti-doublon : email (lowercase) + GitHub username · RGPD : sourceUrl obligatoire
+
+      <footer className="mt-auto border-t border-white/[0.06] px-6 lg:px-8 py-6">
+        <p className="text-[11px] leading-relaxed tracking-[-0.01em] text-white/30">
+          Accès restreint à vanessadepraute@gmail.com · Anti-doublon email + GitHub · sourceUrl RGPD requis · Sentient · Dark
+        </p>
       </footer>
     </div>
   );
@@ -51,10 +57,12 @@ export default function Home() {
 function HeaderAuth() {
   const { isAuthenticated } = useConvexAuth();
   const viewer = useQuery(api.viewer.viewer);
-  if (!isAuthenticated || !viewer) return <span className="text-xs text-muted-foreground hidden sm:block">🔒 privé</span>;
+  if (!isAuthenticated || !viewer) {
+    return <span className="text-[11px] tracking-[0.08em] uppercase text-white/30">🔒 privé</span>;
+  }
   return (
     <div className="flex items-center gap-3">
-      <span className="text-xs text-muted-foreground hidden sm:inline">{viewer.email}</span>
+      <span className="hidden sm:inline text-[12px] tracking-[-0.01em] text-white/50">{viewer.email}</span>
       <SignOutButton />
     </div>
   );

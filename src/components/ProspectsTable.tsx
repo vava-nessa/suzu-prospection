@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   DropdownMenu,
@@ -36,35 +35,23 @@ function isConvexConfigured() {
 
 function EmptyState() {
   return (
-    <Card className="border-dashed">
-      <CardContent className="py-12 text-center">
-        <p className="text-sm text-muted-foreground">
-          Aucun prospect pour l&apos;instant. Ajoute ton premier prospect ou lance le scraper.
-        </p>
-        <p className="text-xs text-muted-foreground mt-2">
-          Anti-doublon actif : email (lowercase) + GitHub username uniques.
-        </p>
-      </CardContent>
-    </Card>
+    <div className="border border-dashed border-white/[0.08] rounded-[12px] py-14 text-center bg-white/[0.015]">
+      <p className="text-[14px] tracking-[-0.02em] text-white/60">Aucun prospect pour l&apos;instant.</p>
+      <p className="text-[12px] tracking-[-0.01em] text-white/30 mt-1">Ajoute ton premier prospect ou lance le scraper. Anti-doublon actif.</p>
+    </div>
   );
 }
 
 function NotConfiguredState() {
   return (
-    <Card className="border-amber-200 bg-amber-50/60">
-      <CardHeader>
-        <CardTitle className="text-amber-900 text-base">Convex non connecté</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3 text-sm text-amber-800">
-        <p>Ce CRM a besoin d&apos;un backend Convex (free plan). Étapes :</p>
-        <ol className="list-decimal list-inside space-y-1 ml-2">
-          <li><code className="bg-white px-1.5 py-0.5 rounded border text-xs">npx convex dev</code> — connecte ton compte Convex (GitHub OAuth) et crée le projet <b>suzu-prospection</b></li>
-          <li>Ça génère <code className="bg-white px-1.5 py-0.5 rounded border text-xs">.env.local</code> avec <code className="text-xs">NEXT_PUBLIC_CONVEX_URL</code> + dossier <code className="text-xs">convex/_generated</code></li>
-          <li>Relance <code className="bg-white px-1.5 py-0.5 rounded border text-xs">pnpm dev</code> — le tableau devient live.</li>
-        </ol>
-        <p className="text-xs">Ensuite on déploiera sur Vercel (tu me connecteras tes comptes Convex + Vercel).</p>
-      </CardContent>
-    </Card>
+    <div className="border border-amber-500/20 bg-amber-500/[0.06] rounded-[12px] p-5">
+      <p className="text-[13px] font-[600] tracking-[-0.02em] text-amber-200">Convex non connecté</p>
+      <ol className="list-decimal list-inside mt-3 space-y-1 text-[13px] tracking-[-0.01em] text-amber-200/70">
+        <li><code className="bg-white/[0.06] border border-white/[0.08] rounded px-1.5 py-0.5 text-[11px]">npx convex dev</code> — crée le projet suzu-prospection</li>
+        <li>Génère <code className="bg-white/[0.06] border border-white/[0.08] rounded px-1.5 py-0.5 text-[11px]">.env.local</code> + <code className="bg-white/[0.06] border border-white/[0.08] rounded px-1.5 py-0.5 text-[11px]">convex/_generated</code></li>
+        <li>Relance <code className="bg-white/[0.06] border border-white/[0.08] rounded px-1.5 py-0.5 text-[11px]">pnpm dev</code></li>
+      </ol>
+    </div>
   );
 }
 
@@ -74,11 +61,10 @@ export function ProspectsTable() {
   const [country, setCountry] = useState("all");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  // simple debounce
   const handleSearchChange = (v: string) => {
     setSearch(v);
     clearTimeout((handleSearchChange as unknown as { _t?: number })._t);
-    (handleSearchChange as unknown as { _t: number })._t = window.setTimeout(() => setDebouncedSearch(v), 350) as unknown as number;
+    (handleSearchChange as unknown as { _t: number })._t = window.setTimeout(() => setDebouncedSearch(v), 300) as unknown as number;
   };
 
   const isConfigured = isConvexConfigured();
@@ -95,19 +81,11 @@ export function ProspectsTable() {
   if (!isConfigured) {
     return (
       <div className="space-y-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Suzu Prospection</h1>
-            <p className="text-sm text-muted-foreground">CRM prospects devs — crédits gratos / cold email</p>
-          </div>
-          <Badge variant="outline" className="w-fit bg-amber-50 text-amber-700 border-amber-200">Convex non connecté</Badge>
+        <div className="flex flex-col gap-1">
+          <h1 className="text-[22px] font-[600] tracking-[-0.03em]">Prospects</h1>
+          <p className="text-[13px] tracking-[-0.01em] text-white/40">CRM prospection — crédits gratos / cold email</p>
         </div>
         <NotConfiguredState />
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card><CardHeader><CardTitle className="text-sm">Total</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">—</p><p className="text-xs text-muted-foreground">En attente de Convex</p></CardContent></Card>
-          <Card><CardHeader><CardTitle className="text-sm">Vérifiés</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">—</p></CardContent></Card>
-          <Card><CardHeader><CardTitle className="text-sm">Envoyés</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">—</p></CardContent></Card>
-        </div>
       </div>
     );
   }
@@ -116,197 +94,184 @@ export function ProspectsTable() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Suzu Prospection</h1>
-            <p className="text-sm text-muted-foreground">
-              Prospects devs qualifiés — outreach &quot;crédits gratos / test gratuit&quot;
-            </p>
-          </div>
-          <AddProspectDialog />
+      {/* Title row — full width */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h1 className="text-[28px] font-[600] tracking-[-0.04em] leading-none">Prospects</h1>
+          <p className="text-[13px] tracking-[-0.01em] text-white/40 mt-2">
+            Devs qualifiés — outreach “crédits gratos / test gratuit” · {stats ? `${stats.total} total` : "…"} · anti-doublon
+          </p>
         </div>
+        <AddProspectDialog />
+      </div>
 
-        {/* Stats */}
-        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-xs font-medium text-muted-foreground">Total prospects</CardTitle></CardHeader>
-            <CardContent><p className="text-2xl font-bold">{stats ? stats.total : loading ? "—" : "0"}</p></CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-xs font-medium text-muted-foreground">Vérifiés</CardTitle></CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{stats ? stats.verified : "—"}</p>
-              <p className="text-xs text-muted-foreground">{stats ? `${stats.total ? Math.round((stats.verified / stats.total) * 100) : 0}%` : ""}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-xs font-medium text-muted-foreground">Envoyés</CardTitle></CardHeader>
-            <CardContent><p className="text-2xl font-bold">{stats?.counts?.sent ?? 0}</p></CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-xs font-medium text-muted-foreground">Répondu</CardTitle></CardHeader>
-            <CardContent><p className="text-2xl font-bold">{stats?.counts?.replied ?? 0}</p></CardContent>
-          </Card>
+      {/* Stats — Linear metrics bar, full width, hairline */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 border border-white/[0.06] rounded-[12px] overflow-hidden bg-white/[0.015]">
+        {[
+          { label: "Total", value: stats ? String(stats.total) : loading ? "—" : "0", sub: stats ? `${stats.verified} vérifiés` : "" },
+          { label: "Vérifiés", value: stats ? String(stats.verified) : "—", sub: stats ? `${stats.total ? Math.round((stats.verified / stats.total) * 100) : 0}%` : "" },
+          { label: "Envoyés", value: String(stats?.counts?.sent ?? 0), sub: "queued → sent" },
+          { label: "Répondu", value: String(stats?.counts?.replied ?? 0), sub: `${stats?.counts?.bounced ?? 0} bounce` },
+        ].map((s) => (
+          <div key={s.label} className="px-5 py-4 border-r last:border-r-0 border-white/[0.06] [&:nth-child(2)]:border-r-0 lg:[&:nth-child(2)]:border-r lg:border-r">
+            <p className="text-[10px] font-[500] tracking-[0.08em] uppercase text-white/30">{s.label}</p>
+            <p className="text-[24px] font-[600] tracking-[-0.04em] leading-none mt-2">{s.value}</p>
+            <p className="text-[11px] tracking-[-0.01em] text-white/30 mt-1 h-4">{s.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Filters — full width bar */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center border border-white/[0.06] rounded-[12px] bg-white/[0.015] p-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/25" />
+          <Input
+            placeholder="Recherche nom, email, GitHub, stack…"
+            value={search}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="h-8 pl-8 bg-[#0a0a0a] border-white/[0.08] text-[13px] placeholder:text-white/20 focus-visible:border-white/15 focus-visible:ring-0"
+          />
         </div>
-
-        {/* Filters */}
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Recherche nom, email, GitHub, stack..."
-              value={search}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <div className="flex gap-2">
-            <Select value={status} onValueChange={(v: string | null) => setStatus(v ?? "all")}>
-              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {STATUS_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={country} onValueChange={(v: string | null) => setCountry(v ?? "all")}>
-              <SelectTrigger className="w-[120px]"><SelectValue placeholder="Pays" /></SelectTrigger>
-              <SelectContent>
-                {COUNTRIES.map((c) => (
-                  <SelectItem key={c} value={c}>{c === "all" ? "Tous pays" : c}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="flex gap-2">
+          <Select value={status} onValueChange={(v: string | null) => setStatus(v ?? "all")}>
+            <SelectTrigger className="h-8 w-[160px] bg-[#0a0a0a] border-white/[0.08] text-[13px]"><SelectValue /></SelectTrigger>
+            <SelectContent className="bg-[#111] border-white/[0.08] text-white">
+              {STATUS_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value} className="text-[13px]">{o.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={country} onValueChange={(v: string | null) => setCountry(v ?? "all")}>
+            <SelectTrigger className="h-8 w-[110px] bg-[#0a0a0a] border-white/[0.08] text-[13px]"><SelectValue placeholder="Pays" /></SelectTrigger>
+            <SelectContent className="bg-[#111] border-white/[0.08] text-white">
+              {COUNTRIES.map((c) => (
+                <SelectItem key={c} value={c} className="text-[13px]">{c === "all" ? "Tous pays" : c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      {/* Table / Cards */}
+      {/* Table */}
       {loading ? (
-        <Card>
-          <CardContent className="pt-6 space-y-3">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-          </CardContent>
-        </Card>
+        <div className="border border-white/[0.06] rounded-[12px] bg-white/[0.015] p-6 space-y-3">
+          <Skeleton className="h-9 w-full bg-white/[0.06]" />
+          <Skeleton className="h-9 w-full bg-white/[0.04]" />
+          <Skeleton className="h-9 w-full bg-white/[0.04]" />
+        </div>
       ) : !prospects || prospects.length === 0 ? (
         <EmptyState />
       ) : (
         <>
-          {/* Desktop table */}
-          <Card className="hidden md:block overflow-hidden">
+          {/* Desktop — full-width table, Linear style */}
+          <div className="hidden md:block border border-white/[0.06] rounded-[12px] overflow-hidden bg-white/[0.015]">
             <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Prospect</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Pays</TableHead>
-                    <TableHead>Stack</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-white/[0.06] bg-white/[0.02]">
+                    <th className="px-4 py-3 text-[11px] font-[500] tracking-[0.08em] uppercase text-white/30 whitespace-nowrap">Prospect</th>
+                    <th className="px-4 py-3 text-[11px] font-[500] tracking-[0.08em] uppercase text-white/30 whitespace-nowrap">Email</th>
+                    <th className="px-4 py-3 text-[11px] font-[500] tracking-[0.08em] uppercase text-white/30">Pays</th>
+                    <th className="px-4 py-3 text-[11px] font-[500] tracking-[0.08em] uppercase text-white/30">Stack</th>
+                    <th className="px-4 py-3 text-[11px] font-[500] tracking-[0.08em] uppercase text-white/30">Statut</th>
+                    <th className="px-4 py-3 w-[44px]"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/[0.04]">
                   {prospects.map((p: any) => (
-                    <TableRow key={p._id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center text-white text-xs font-semibold shrink-0">
+                    <tr key={p._id} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="h-7 w-7 rounded-full bg-white text-black grid place-items-center text-[11px] font-[700] tracking-[-0.02em] shrink-0">
                             {(p.firstName?.[0] ?? p.email[0]).toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-sm font-medium truncate">
+                            <p className="text-[13px] font-[500] tracking-[-0.02em] truncate">
                               {[p.firstName, p.lastName].filter(Boolean).join(" ") || p.githubUsername || "—"}
                             </p>
-                            <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                            <p className="text-[11px] tracking-[-0.01em] text-white/30 truncate flex items-center gap-1">
                               {p.githubUsername && <><GithubIcon className="h-3 w-3" />{p.githubUsername}</>}
-                              {p.githubUsername && p.website && " · "}
-                              {p.website && <a href={p.website} target="_blank" rel="noreferrer" className="hover:underline flex items-center gap-1"><Globe className="h-3 w-3" />Site</a>}
+                              {p.githubUsername && p.website && <span className="text-white/15">·</span>}
+                              {p.website && <a href={p.website} target="_blank" rel="noreferrer" className="hover:text-white/60 inline-flex items-center gap-1"><Globe className="h-3 w-3" />Site</a>}
                             </p>
                           </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <a href={`mailto:${p.email}`} className="text-sm hover:underline underline-offset-4">
+                      </td>
+                      <td className="px-4 py-3">
+                        <a href={`mailto:${p.email}`} className="text-[13px] tracking-[-0.01em] text-white/70 hover:text-white underline decoration-white/10 underline-offset-4">
                           {p.email}
                         </a>
-                        {p.emailVerified && <Badge variant="outline" className="ml-2 bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]">vérifié</Badge>}
-                      </TableCell>
-                      <TableCell><Badge variant="secondary" className="text-xs">{p.country ?? "—"}</Badge></TableCell>
-                      <TableCell><span className="text-xs text-muted-foreground truncate max-w-[160px] block">{p.techStack ?? "—"}</span></TableCell>
-                      <TableCell><StatusBadge status={p.status} /></TableCell>
-                      <TableCell>
+                        {p.emailVerified && <span className="ml-2 inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-[500] text-emerald-300">vérifié</span>}
+                      </td>
+                      <td className="px-4 py-3"><span className="inline-flex rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[11px] font-[500] tracking-[-0.01em] text-white/50">{p.country ?? "—"}</span></td>
+                      <td className="px-4 py-3"><span className="text-[12px] tracking-[-0.01em] text-white/40 truncate max-w-[220px] block">{p.techStack ?? "—"}</span></td>
+                      <td className="px-4 py-3"><StatusBadge status={p.status} /></td>
+                      <td className="px-4 py-3">
                         <DropdownMenu>
-                          <DropdownMenuTrigger render={<button className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted"><MoreHorizontal className="h-4 w-4" /></button>}></DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => updateStatus({ id: p._id, status: "verified" })}>Marquer vérifié</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => updateStatus({ id: p._id, status: "queued" })}>Mettre en file</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => updateStatus({ id: p._id, status: "sent" })}>Marquer envoyé</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => updateStatus({ id: p._id, status: "replied" })}>Marquer répondu</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => updateStatus({ id: p._id, status: "opted_out" })}>Opt-out</DropdownMenuItem>
-                            {p.website && <DropdownMenuItem onClick={() => window.open(p.website, "_blank")} className="flex items-center gap-2"><ExternalLink className="h-4 w-4" />Voir site</DropdownMenuItem>}
-                            {p.sourceUrl && <DropdownMenuItem onClick={() => window.open(p.sourceUrl, "_blank")} className="flex items-center gap-2"><ExternalLink className="h-4 w-4" />Source RGPD</DropdownMenuItem>}
+                          <DropdownMenuTrigger render={<button className="inline-flex h-7 w-7 items-center justify-center rounded-[8px] border border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.06] text-white/50 hover:text-white"><MoreHorizontal className="h-3.5 w-3.5" /></button>}></DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-[#0f0f0f] border-white/[0.08] text-white min-w-[180px]">
+                            <DropdownMenuItem onClick={() => updateStatus({ id: p._id, status: "verified" })} className="text-[13px] focus:bg-white/[0.06]">Marquer vérifié</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => updateStatus({ id: p._id, status: "queued" })} className="text-[13px] focus:bg-white/[0.06]">Mettre en file</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => updateStatus({ id: p._id, status: "sent" })} className="text-[13px] focus:bg-white/[0.06]">Marquer envoyé</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => updateStatus({ id: p._id, status: "replied" })} className="text-[13px] focus:bg-white/[0.06]">Marquer répondu</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => updateStatus({ id: p._id, status: "opted_out" })} className="text-[13px] focus:bg-white/[0.06]">Opt-out</DropdownMenuItem>
+                            {p.website && <DropdownMenuItem onClick={() => window.open(p.website, "_blank")} className="text-[13px] focus:bg-white/[0.06] gap-2"><ExternalLink className="h-3.5 w-3.5" />Voir site</DropdownMenuItem>}
+                            {p.sourceUrl && <DropdownMenuItem onClick={() => window.open(p.sourceUrl, "_blank")} className="text-[13px] focus:bg-white/[0.06] gap-2"><ExternalLink className="h-3.5 w-3.5" />Source RGPD</DropdownMenuItem>}
                             <DropdownMenuItem
-                              className="text-red-600 focus:text-red-600"
+                              className="text-[13px] text-red-300 focus:text-red-200 focus:bg-red-500/10"
                               onClick={() => { if (confirm(`Supprimer ${p.email} ?`)) removeProspect({ id: p._id }); }}
                             >
-                              <Trash2 className="h-4 w-4" /> Supprimer
+                              <Trash2 className="h-3.5 w-3.5" /> Supprimer
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
+                      </td>
+                    </tr>
                   ))}
-                </TableBody>
-              </Table>
+                </tbody>
+              </table>
             </div>
-            <div className="border-t px-4 py-3 text-xs text-muted-foreground">
-              {prospects.length} prospect{prospects.length !== 1 ? "s" : ""} — anti-doublon sur email + GitHub.
+            <div className="border-t border-white/[0.06] bg-white/[0.02] px-4 py-3 text-[11px] tracking-[-0.01em] text-white/30">
+              {prospects.length} prospect{prospects.length !== 1 ? "s" : ""} · full width · anti-doublon email + GitHub
             </div>
-          </Card>
+          </div>
 
-          {/* Mobile cards */}
+          {/* Mobile */}
           <div className="grid gap-3 md:hidden">
             {prospects.map((p: any) => (
-              <Card key={p._id} className="overflow-hidden">
-                <CardContent className="pt-4 space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="h-9 w-9 rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center text-white text-xs font-semibold shrink-0">
-                        {(p.firstName?.[0] ?? p.email[0]).toUpperCase()}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold truncate">{[p.firstName, p.lastName].filter(Boolean).join(" ") || p.githubUsername || p.email.split("@")[0]}</p>
-                        <a href={`mailto:${p.email}`} className="text-xs text-muted-foreground hover:underline break-all">{p.email}</a>
-                      </div>
+              <div key={p._id} className="border border-white/[0.06] rounded-[12px] bg-white/[0.015] p-4 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-8 w-8 rounded-full bg-white text-black grid place-items-center text-[11px] font-[700] shrink-0">
+                      {(p.firstName?.[0] ?? p.email[0]).toUpperCase()}
                     </div>
-                    <StatusBadge status={p.status} />
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-[600] tracking-[-0.02em] truncate">{[p.firstName, p.lastName].filter(Boolean).join(" ") || p.githubUsername || p.email.split("@")[0]}</p>
+                      <a href={`mailto:${p.email}`} className="text-[11px] tracking-[-0.01em] text-white/40 hover:text-white/60 break-all">{p.email}</a>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {p.country && <Badge variant="secondary" className="text-xs">{p.country}</Badge>}
-                    {p.githubUsername && <Badge variant="outline" className="text-xs gap-1"><GithubIcon className="h-3 w-3" />{p.githubUsername}</Badge>}
-                    {p.techStack && <Badge variant="outline" className="text-xs truncate max-w-[150px]">{p.techStack}</Badge>}
-                    {p.emailVerified && <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs" variant="outline">vérifié</Badge>}
-                  </div>
-                  {p.personalizationHook && <p className="text-xs bg-violet-50 border border-violet-100 rounded-lg px-3 py-2 text-violet-900">💡 {p.personalizationHook}</p>}
-                  <div className="flex flex-wrap gap-2">
-                    {p.website && <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => window.open(p.website, "_blank")}><Globe className="h-3 w-3" /> Site</Button>}
-                    {p.sourceUrl && <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => window.open(p.sourceUrl, "_blank")}><ExternalLink className="h-3 w-3" /> Source</Button>}
-                    <Select value={p.status} onValueChange={(v: string | null) => v && updateStatus({ id: p._id, status: v })}>
-                      <SelectTrigger className="h-7 text-xs w-[130px]"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {STATUS_OPTIONS.filter(o => o.value !== "all").map((o) => (
-                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </CardContent>
-              </Card>
+                  <StatusBadge status={p.status} />
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {p.country && <Badge variant="outline" className="text-[11px] border-white/[0.08] bg-white/[0.04] text-white/50">{p.country}</Badge>}
+                  {p.githubUsername && <Badge variant="outline" className="text-[11px] border-white/[0.08] bg-white/[0.04] text-white/50 gap-1"><GithubIcon className="h-3 w-3" />{p.githubUsername}</Badge>}
+                  {p.techStack && <Badge variant="outline" className="text-[11px] border-white/[0.08] bg-white/[0.04] text-white/40 truncate max-w-[150px]">{p.techStack}</Badge>}
+                  {p.emailVerified && <Badge className="bg-emerald-500/10 text-emerald-300 border-emerald-500/20 text-[11px]" variant="outline">vérifié</Badge>}
+                </div>
+                {p.personalizationHook && <p className="text-[12px] tracking-[-0.01em] leading-relaxed border border-white/[0.06] bg-white/[0.03] rounded-[10px] px-3 py-2 text-white/60">💡 {p.personalizationHook}</p>}
+                <div className="flex flex-wrap gap-2">
+                  {p.website && <Button variant="outline" size="sm" className="h-7 text-[11px] gap-1 border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.06] text-white/70" onClick={() => window.open(p.website, "_blank")}><Globe className="h-3 w-3" /> Site</Button>}
+                  {p.sourceUrl && <Button variant="outline" size="sm" className="h-7 text-[11px] gap-1 border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.06] text-white/70" onClick={() => window.open(p.sourceUrl, "_blank")}><ExternalLink className="h-3 w-3" /> Source</Button>}
+                  <Select value={p.status} onValueChange={(v: string | null) => v && updateStatus({ id: p._id, status: v })}>
+                    <SelectTrigger className="h-7 text-[11px] w-[130px] bg-[#0a0a0a] border-white/[0.08]"><SelectValue /></SelectTrigger>
+                    <SelectContent className="bg-[#111] border-white/[0.08] text-white">
+                      {STATUS_OPTIONS.filter(o => o.value !== "all").map((o) => (
+                        <SelectItem key={o.value} value={o.value} className="text-[13px]">{o.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             ))}
           </div>
         </>

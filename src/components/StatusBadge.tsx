@@ -1,19 +1,19 @@
 import { Badge } from "@/components/ui/badge";
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  new: { label: "Nouveau", className: "bg-slate-100 text-slate-700 border-slate-200" },
-  verified: { label: "Vérifié", className: "bg-sky-100 text-sky-700 border-sky-200" },
-  queued: { label: "En file", className: "bg-amber-100 text-amber-700 border-amber-200" },
-  sent: { label: "Envoyé", className: "bg-emerald-100 text-emerald-700 border-emerald-200" },
-  bounced: { label: "Bounce", className: "bg-red-100 text-red-700 border-red-200" },
-  replied: { label: "Répondu", className: "bg-violet-100 text-violet-700 border-violet-200" },
-  opted_out: { label: "Opt-out", className: "bg-zinc-100 text-zinc-500 border-zinc-200" },
+  new: { label: "Nouveau", className: "bg-white/[0.06] text-white/70 border-white/[0.08]" },
+  verified: { label: "Vérifié", className: "bg-sky-500/15 text-sky-300 border-sky-500/20" },
+  queued: { label: "En file", className: "bg-amber-500/15 text-amber-300 border-amber-500/20" },
+  sent: { label: "Envoyé", className: "bg-emerald-500/15 text-emerald-300 border-emerald-500/20" },
+  bounced: { label: "Bounce", className: "bg-red-500/15 text-red-300 border-red-500/20" },
+  replied: { label: "Répondu", className: "bg-violet-500/15 text-violet-300 border-violet-500/20" },
+  opted_out: { label: "Opt-out", className: "bg-white/[0.04] text-white/30 border-white/[0.06]" },
 };
 
 export function StatusBadge({ status }: { status: string }) {
-  const cfg = STATUS_CONFIG[status] ?? { label: status, className: "bg-zinc-100 text-zinc-700" };
+  const cfg = STATUS_CONFIG[status] ?? { label: status, className: "bg-white/[0.06] text-white/60 border-white/[0.08]" };
   return (
-    <Badge variant="outline" className={`text-xs font-medium border ${cfg.className} whitespace-nowrap`}>
+    <Badge variant="outline" className={`text-[11px] font-[500] tracking-[-0.01em] border rounded-full px-2 py-0.5 ${cfg.className}`}>
       {cfg.label}
     </Badge>
   );

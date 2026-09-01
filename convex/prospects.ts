@@ -1,6 +1,19 @@
 // @ts-nocheck
 import { query, mutation } from "./_generated/server";
+import { auth } from "./auth";
 import { v } from "convex/values";
+
+const ALLOWED_EMAILS = ["vanessadepraute@gmail.com"] as const;
+
+async function requireAuth(ctx: any) {
+  const userId = await auth.getUserId(ctx);
+  if (userId === null) throw new Error("Non authentifié — connecte-toi.");
+  const user = await ctx.db.get(userId);
+  const email = (user as any)?.email?.toLowerCase?.().trim();
+  if (!email || !(ALLOWED_EMAILS as readonly string[]).includes(email)) throw new Error("Accès refusé");
+  return userId;
+}
+
 
 // List with filters + search (server-side filtering)
 export const list = query({
@@ -10,7 +23,8 @@ export const list = query({
     search: v.optional(v.string()),
     limit: v.optional(v.number()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx: any, args: any) => {
+    await requireAuth(ctx);
     let prospects;
 
     if (args.status && args.status !== "all") {
@@ -54,14 +68,16 @@ export const list = query({
 
 export const getById = query({
   args: { id: v.id("prospects") },
-  handler: async (ctx, args) => {
+  handler: async (ctx: any, args: any) => {
+    await requireAuth(ctx);
     return await ctx.db.get(args.id);
   },
 });
 
 export const stats = query({
   args: {},
-  handler: async (ctx) => {
+  handler: async (ctx: any) => {
+    await requireAuth(ctx);
     const all = await ctx.db.query("prospects").collect();
     const counts: Record<string, number> = {};
     for (const p of all) counts[p.status] = (counts[p.status] ?? 0) + 1;
@@ -87,7 +103,8 @@ export const upsert = mutation({
     sourceUrl: v.string(),
     notes: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx: any, args: any) => {
+    await requireAuth(ctx);
     const normalized = args.email.toLowerCase().trim();
     if (!normalized || !normalized.includes("@")) {
       throw new Error("Invalid email");
@@ -140,7 +157,8 @@ export const updateStatus = mutation({
     id: v.id("prospects"),
     status: v.string(),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx: any, args: any) => {
+    await requireAuth(ctx);
     const valid = ["new", "verified", "queued", "sent", "bounced", "replied", "opted_out"];
     if (!valid.includes(args.status)) throw new Error(`Invalid status: ${args.status}`);
     await ctx.db.patch(args.id, {
@@ -164,7 +182,8 @@ export const updateProspect = mutation({
     emailVerified: v.optional(v.boolean()),
     status: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx: any, args: any) => {
+    await requireAuth(ctx);
     const { id, ...patch } = args;
     const clean: Record<string, unknown> = {};
     for (const [k, val] of Object.entries(patch)) {
@@ -181,7 +200,8 @@ export const bulkUpdateStatus = mutation({
     ids: v.array(v.id("prospects")),
     status: v.string(),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx: any, args: any) => {
+    await requireAuth(ctx);
     const valid = ["new", "verified", "queued", "sent", "bounced", "replied", "opted_out"];
     if (!valid.includes(args.status)) throw new Error(`Invalid status: ${args.status}`);
     for (const id of args.ids) {
@@ -193,7 +213,8 @@ export const bulkUpdateStatus = mutation({
 
 export const remove = mutation({
   args: { id: v.id("prospects") },
-  handler: async (ctx, args) => {
+  handler: async (ctx: any, args: any) => {
+    await requireAuth(ctx);
     await ctx.db.delete(args.id);
     return { ok: true };
   },
@@ -217,7 +238,8 @@ export const bulkImport = mutation({
       })
     ),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx: any, args: any) => {
+    await requireAuth(ctx);
     let created = 0;
     let skipped = 0;
     for (const p of args.prospects) {
