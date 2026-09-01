@@ -1,3 +1,3 @@
 {
-  "installCommand": "pnpm install --config.minimum-release-age=0 --config.minimumReleaseAgeExcludePattern=* --no-frozen-lockfile"
+  "installCommand": "pnpm install --config.minimum-release-age=0 --no-frozen-lockfile --allow-build=esbuild --allow-build=unrs-resolver"
 }
