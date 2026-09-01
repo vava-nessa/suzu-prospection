@@ -1,11 +1,13 @@
 "use client";
 
-import { ConvexProvider, ConvexReactClient } from "convex/react";
+import { ConvexAuthProvider } from "@convex-dev/auth/react";
+import { ConvexReactClient } from "convex/react";
 import { ReactNode, useMemo } from "react";
 
 export function ConvexClientProvider({ children }: { children: ReactNode }) {
   const client = useMemo(() => {
-    const url = process.env.NEXT_PUBLIC_CONVEX_URL || "https://placeholder.convex.cloud";
+    const url = process.env.NEXT_PUBLIC_CONVEX_URL;
+    if (!url) return null;
     try {
       return new ConvexReactClient(url);
     } catch {
@@ -14,5 +16,5 @@ export function ConvexClientProvider({ children }: { children: ReactNode }) {
   }, []);
 
   if (!client) return <>{children}</>;
-  return <ConvexProvider client={client}>{children}</ConvexProvider>;
+  return <ConvexAuthProvider client={client}>{children}</ConvexAuthProvider>;
 }

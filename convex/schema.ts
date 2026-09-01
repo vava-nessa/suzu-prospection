@@ -1,8 +1,11 @@
 // @ts-nocheck
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { authTables } from "@convex-dev/auth/server";
 
 export default defineSchema({
+  ...authTables,
+
   prospects: defineTable({
     email: v.string(),
     emailNormalized: v.string(),
