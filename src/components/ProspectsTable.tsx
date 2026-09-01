@@ -188,9 +188,12 @@ export function ProspectsTable() {
               <div className="px-2.5 py-2 w-[32px] shrink-0" />
             </div>
 
-            {/* virtual scroll — fixed height, 1000 rows = instant */}
-            <div ref={parentRef} className="overflow-auto max-h-[calc(100vh-168px)] overscroll-contain" style={{ contain: "strict" }}>
+            {/* virtual scroll — Safari-safe: explicit height, pas de contain:strict qui casse la mesure */}
+            <div ref={parentRef} className="overflow-auto overscroll-contain" style={{ height: "min(62vh, 680px)", maxHeight: "calc(100vh - 200px)" }}>
               <div style={{ height: `${totalSize}px`, position: "relative", width: "100%" }}>
+                {count > 0 && virtualItems.length === 0 && (
+                  <div className="absolute inset-0 flex items-center justify-center text-[11px] text-white/30">Chargement…</div>
+                )}
                 {virtualItems.map((vr) => {
                   const p: any = (prospects as any[])[vr.index];
                   const contacted = p.status === "contacted" || p.status === "sent" || p.status === "replied";

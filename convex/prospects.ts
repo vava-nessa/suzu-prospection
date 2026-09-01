@@ -55,8 +55,23 @@ export const list = query({
           p.firstName?.toLowerCase().includes(s) ||
           p.lastName?.toLowerCase().includes(s) ||
           p.githubUsername?.toLowerCase().includes(s) ||
-          p.website?.toLowerCase().includes(s)
+          p.website?.toLowerCase().includes(s) ||
+          p.personalizationHook?.toLowerCase().includes(s) ||
+          p.country?.toLowerCase().includes(s)
       );
+    }
+    // ceinture + bretelles : déduplique sur emailNormalized (au cas où un import direct aurait contourné bulkImport)
+    {
+      const seen = new Set<string>();
+      const deduped: any[] = [];
+      for (const p of prospects) {
+        const key = (p.emailNormalized ?? p.email ?? "").toLowerCase().trim();
+        if (!key) { deduped.push(p); continue; }
+        if (seen.has(key)) continue;
+        seen.add(key);
+        deduped.push(p);
+      }
+      prospects = deduped;
     }
     if (args.country && args.country !== "all" && !args.status) {
       prospects.sort((a, b) => b.createdAt - a.createdAt);
