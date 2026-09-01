@@ -152,6 +152,7 @@ export const upsert = mutation({
       replied: false,
       emailVerified: false,
       createdAt: Date.now(),
+      addedAt: Date.now(),
       notes: args.notes?.trim() || undefined,
     });
     return { status: "created" as const, id, email: args.email.trim() };
@@ -312,6 +313,7 @@ export const bulkImport = mutation({
         replied: false,
         emailVerified: false,
         createdAt: Date.now(),
+        addedAt: Date.now(),
         notes: p.notes?.trim() || undefined,
       });
       created++;

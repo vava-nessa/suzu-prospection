@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AddProspectDialog } from "@/components/AddProspectDialog";
-import { Search, MoreHorizontal, Trash2, ExternalLink, Globe, Copy, Check } from "lucide-react";
+import { Search, MoreHorizontal, Trash2, ExternalLink, Globe, Copy, Check, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 
 function GithubIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -31,6 +31,7 @@ function countryFlag(code?: string): string {
     FR: "🇫🇷", US: "🇺🇸", GB: "🇬🇧", DE: "🇩🇪", ES: "🇪🇸", CA: "🇨🇦", BE: "🇧🇪", CH: "🇨🇭", NL: "🇳🇱", IT: "🇮🇹",
     PL: "🇵🇱", PT: "🇵🇹", IE: "🇮🇪", AT: "🇦🇹", SE: "🇸🇪", DK: "🇩🇰", NO: "🇳🇴", FI: "🇫🇮", CN: "🇨🇳",
     IL: "🇮🇱", AU: "🇦🇺", BR: "🇧🇷", IN: "🇮🇳", PK: "🇵🇰", EG: "🇪🇬", NG: "🇳🇬", JP: "🇯🇵", KR: "🇰🇷",
+    BO: "🇧🇴", UA: "🇺🇦", PH: "🇵🇭", BD: "🇧🇩", EE: "🇪🇪", TN: "🇹🇳", PE: "🇵🇪",
   };
   if (map[c]) return map[c];
   const A = "A".charCodeAt(0);
@@ -48,6 +49,18 @@ function siteHost(url?: string): string | null {
   try { return new URL(url).host.replace(/^www\./, ""); } catch { return url; }
 }
 
+function formatAdded(p: any): string {
+  const ts = p.addedAt ?? p.createdAt ?? p._creationTime;
+  if (!ts) return "—";
+  const d = new Date(ts);
+  // 02/09 14:32
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  return `${dd}/${mm} ${hh}:${mi}`;
+}
+
 function rowBg(p: any): string {
   if (p.replied) return "bg-emerald-500/[0.09] hover:bg-emerald-500/[0.13] border-l-2 border-l-emerald-500/60";
   const s = p.status as string;
@@ -61,6 +74,9 @@ function isConvexConfigured() {
   return !!process.env.NEXT_PUBLIC_CONVEX_URL;
 }
 
+type SortCol = "name" | "about" | "site" | "email" | "github" | "country" | "contacted" | "replied" | "added";
+type SortDir = "asc" | "desc";
+
 export function ProspectsTable() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
@@ -72,11 +88,23 @@ export function ProspectsTable() {
   const [editingHookId, setEditingHookId] = useState<string | null>(null);
   const [editingHook, setEditingHook] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [sortCol, setSortCol] = useState<SortCol>("added");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   const handleSearchChange = (v: string) => {
     setSearch(v);
     clearTimeout((handleSearchChange as unknown as { _t?: number })._t);
     (handleSearchChange as unknown as { _t: number })._t = window.setTimeout(() => setDebouncedSearch(v), 300) as unknown as number;
+  };
+
+  const toggleSort = (col: SortCol) => {
+    if (sortCol === col) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortCol(col); setSortDir(col === "added" ? "desc" : "asc"); }
+  };
+
+  const SortIcon = ({ col }: { col: SortCol }) => {
+    if (sortCol !== col) return <ArrowUpDown className="h-3 w-3 opacity-30" />;
+    return sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
   };
 
   const isConfigured = isConvexConfigured();
@@ -94,14 +122,39 @@ export function ProspectsTable() {
       : "skip"
   );
 
+  const sorted = useMemo(() => {
+    if (!prospects) return prospects;
+    const arr = [...(prospects as any[])];
+    const dir = sortDir === "asc" ? 1 : -1;
+    const cmp = (a: number | string) => a;
+    arr.sort((a: any, b: any) => {
+      let va: any, vb: any;
+      switch (sortCol) {
+        case "name": va = displayName(a).toLowerCase(); vb = displayName(b).toLowerCase(); break;
+        case "about": va = (a.personalizationHook ?? "").toLowerCase(); vb = (b.personalizationHook ?? "").toLowerCase(); break;
+        case "site": va = (a.website ?? "").toLowerCase(); vb = (b.website ?? "").toLowerCase(); break;
+        case "email": va = a.email.toLowerCase(); vb = b.email.toLowerCase(); break;
+        case "github": va = (a.githubUsername ?? "").toLowerCase(); vb = (b.githubUsername ?? "").toLowerCase(); break;
+        case "country": va = (a.country ?? "ZZ"); vb = (b.country ?? "ZZ"); break;
+        case "contacted": va = (a.status === "contacted" || a.status === "sent" || a.status === "replied") ? 1 : 0; vb = (b.status === "contacted" || b.status === "sent" || b.status === "replied") ? 1 : 0; break;
+        case "replied": va = a.replied ? 1 : 0; vb = b.replied ? 1 : 0; break;
+        case "added": default: va = a.addedAt ?? a.createdAt ?? a._creationTime ?? 0; vb = b.addedAt ?? b.createdAt ?? b._creationTime ?? 0; break;
+      }
+      if (va < vb) return -1 * dir;
+      if (va > vb) return 1 * dir;
+      return 0;
+    });
+    return arr;
+  }, [prospects, sortCol, sortDir]);
+
   const setContacted = useMutation(api.prospects.setContacted);
   const setReplied = useMutation(api.prospects.setReplied);
   const updateProspect = useMutation(api.prospects.updateProspect);
   const removeProspect = useMutation(api.prospects.remove);
 
-  // virtualization — desktop table only
+  // virtualization — desktop table only (sorted)
   const parentRef = useRef<HTMLDivElement>(null);
-  const count = prospects?.length ?? 0;
+  const count = sorted?.length ?? 0;
   const virtualizer = useVirtualizer({
     count,
     getScrollElement: () => parentRef.current,
@@ -112,15 +165,18 @@ export function ProspectsTable() {
   const totalSize = virtualizer.getTotalSize();
 
   const progress = useMemo(() => {
-    if (!prospects) return null;
-    const contacted = prospects.filter((p: any) => p.status === "contacted" || p.status === "sent").length;
-    const replied = prospects.filter((p: any) => !!p.replied).length;
-    return { total: prospects.length, contacted, replied };
-  }, [prospects]);
+    if (!sorted) return null;
+    const contacted = sorted.filter((p: any) => p.status === "contacted" || p.status === "sent").length;
+    const replied = sorted.filter((p: any) => !!p.replied).length;
+    return { total: sorted.length, contacted, replied };
+  }, [sorted]);
 
   if (!isConfigured) return <div className="text-[11px] text-white/40">Convex non connecté.</div>;
 
   const loading = prospects === undefined;
+
+  const th = "px-2.5 py-2 flex items-center gap-1 select-none hover:text-white/60 transition-colors";
+  const thBtn = "inline-flex items-center gap-1";
 
   return (
     <div className="space-y-2">
@@ -169,22 +225,23 @@ export function ProspectsTable() {
           <Skeleton className="h-6 w-full bg-white/[0.06]" />
           <Skeleton className="h-6 w-full bg-white/[0.04]" />
         </div>
-      ) : !prospects || prospects.length === 0 ? (
+      ) : !sorted || sorted.length === 0 ? (
         <div className="border border-dashed border-white/[0.07] rounded-[10px] py-10 text-center text-[12px] tracking-[-0.01em] text-white/30">Aucun prospect · anti-doublon actif</div>
       ) : (
         <>
           {/* Desktop — virtualized */}
           <div className="hidden md:block border border-white/[0.06] rounded-[10px] overflow-hidden bg-[#040405]">
-            {/* header */}
+            {/* header — triable */}
             <div className="border-b border-white/[0.06] bg-white/[0.03] flex text-[10px] font-[500] tracking-[0.08em] uppercase text-white/30">
-              <div className="px-2.5 py-2 w-[118px] shrink-0">Nom</div>
-              <div className="px-2.5 py-2 flex-1 min-w-[220px] max-w-[320px]">About</div>
-              <div className="px-2.5 py-2 w-[148px] shrink-0">Site</div>
-              <div className="px-2.5 py-2 flex-1 min-w-[180px]">Email</div>
-              <div className="px-2.5 py-2 w-[140px] shrink-0">GitHub</div>
-              <div className="px-2.5 py-2 w-[74px] shrink-0 text-center">Pays</div>
-              <div className="px-2.5 py-2 w-[72px] shrink-0 text-center">Contacté</div>
-              <div className="px-2.5 py-2 w-[72px] shrink-0 text-center">Réponse</div>
+              <button onClick={() => toggleSort("name")} className={`${th} w-[118px] shrink-0`}><span className={thBtn}>Nom <SortIcon col="name" /></span></button>
+              <button onClick={() => toggleSort("about")} className={`${th} flex-1 min-w-[220px] max-w-[320px]`}><span className={thBtn}>About <SortIcon col="about" /></span></button>
+              <button onClick={() => toggleSort("site")} className={`${th} w-[148px] shrink-0`}><span className={thBtn}>Site <SortIcon col="site" /></span></button>
+              <button onClick={() => toggleSort("email")} className={`${th} flex-1 min-w-[180px]`}><span className={thBtn}>Email <SortIcon col="email" /></span></button>
+              <button onClick={() => toggleSort("github")} className={`${th} w-[140px] shrink-0`}><span className={thBtn}>GitHub <SortIcon col="github" /></span></button>
+              <button onClick={() => toggleSort("country")} className={`${th} w-[74px] shrink-0 justify-center`}><span className={thBtn}>Pays <SortIcon col="country" /></span></button>
+              <button onClick={() => toggleSort("contacted")} className={`${th} w-[72px] shrink-0 justify-center`}><span className={thBtn}>Contacté <SortIcon col="contacted" /></span></button>
+              <button onClick={() => toggleSort("replied")} className={`${th} w-[72px] shrink-0 justify-center`}><span className={thBtn}>Réponse <SortIcon col="replied" /></span></button>
+              <button onClick={() => toggleSort("added")} className={`${th} w-[92px] shrink-0 justify-center`}><span className={thBtn}>Ajouté <SortIcon col="added" /></span></button>
               <div className="px-2.5 py-2 w-[32px] shrink-0" />
             </div>
 
@@ -195,7 +252,7 @@ export function ProspectsTable() {
                   <div className="absolute inset-0 flex items-center justify-center text-[11px] text-white/30">Chargement…</div>
                 )}
                 {virtualItems.map((vr) => {
-                  const p: any = (prospects as any[])[vr.index];
+                  const p: any = (sorted as any[])[vr.index];
                   const contacted = p.status === "contacted" || p.status === "sent" || p.status === "replied";
                   const hook: string = p.personalizationHook ?? "";
                   const pitch = hook ? `I visited your website and was impressed by ${hook.charAt(0).toLowerCase() + hook.slice(1)} — would love to offer you free access to Suzu.` : "";
@@ -303,6 +360,10 @@ export function ProspectsTable() {
                         <input type="checkbox" checked={!!p.replied} onChange={(e) => setReplied({ id: p._id, replied: e.target.checked })} className="h-3.5 w-3.5 rounded align-middle accent-emerald-500" title="Réponse = vert" />
                       </div>
 
+                      <div className="px-2.5 w-[92px] shrink-0 text-center">
+                        <span className="text-[11px] tracking-[-0.01em] text-white/35 tabular-nums" title={new Date(p.addedAt ?? p.createdAt ?? p._creationTime).toLocaleString("fr-FR")}>{formatAdded(p)}</span>
+                      </div>
+
                       <div className="px-2.5 w-[32px] shrink-0 flex justify-center">
                         <DropdownMenu>
                           <DropdownMenuTrigger render={<button className="inline-flex h-6 w-6 items-center justify-center rounded-[6px] border border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.07] text-white/40"><MoreHorizontal className="h-3 w-3" /></button>}></DropdownMenuTrigger>
@@ -322,14 +383,21 @@ export function ProspectsTable() {
             </div>
 
             <div className="border-t border-white/[0.06] bg-white/[0.02] px-3 py-1.5 text-[10px] tracking-[-0.01em] text-white/25 flex justify-between">
-              <span>{progress ? `${progress.total} prospects · ${progress.contacted} contactés · ${progress.replied} réponses` : `${count} prospects`} · virtuel 1000+ · noir/bleu/vert · double-clic Nom/About</span>
-              <span className="text-white/20">{count >= 1000 ? "1000 ✓" : `${count}/1000`}</span>
+              <span>{progress ? `${progress.total} prospects · ${progress.contacted} contactés · ${progress.replied} réponses` : `${count} prospects`} · tri: {sortCol} {sortDir} · virtuel</span>
+              <span className="text-white/20">{count >= 1000 ? "1000 ✓" : `${count}`}</span>
             </div>
           </div>
 
-          {/* Mobile — gardé non virtualisé (limité aux 1200, ok sur mobile) */}
+          {/* Mobile — tri appliqué aussi */}
           <div className="grid gap-2 md:hidden">
-            {(prospects as any[]).slice(0, 200).map((p: any) => {
+            <div className="flex gap-1.5 overflow-x-auto pb-1">
+              {(["added","name","country"] as SortCol[]).map((c) => (
+                <button key={c} onClick={() => toggleSort(c)} className={`shrink-0 h-6 px-2.5 rounded-full border text-[11px] flex items-center gap-1 ${sortCol===c ? "bg-white text-black border-white" : "bg-white/[0.06] border-white/[0.08] text-white/50"}`}>
+                  {c==="added"?"Ajouté":c==="name"?"Nom":"Pays"} {sortCol===c ? (sortDir==="asc"?<ArrowUp className="h-3 w-3"/>:<ArrowDown className="h-3 w-3"/>) : <ArrowUpDown className="h-3 w-3 opacity-40"/>}
+                </button>
+              ))}
+            </div>
+            {(sorted as any[]).slice(0, 200).map((p: any) => {
               const contacted = p.status === "contacted" || p.status === "sent" || p.status === "replied";
               return (
                 <div key={p._id} className={`border rounded-[10px] p-3 flex flex-col gap-2 ${p.replied ? "border-emerald-500/25 bg-emerald-500/[0.08]" : contacted ? "border-sky-400/25 bg-sky-500/[0.06]" : "border-white/[0.06] bg-white/[0.015]"}`}>
@@ -344,6 +412,7 @@ export function ProspectsTable() {
                       ) : displayName(p)}
                     </p>
                     <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[10px] tracking-[-0.01em] text-white/30 tabular-nums">{formatAdded(p)}</span>
                       <span className="text-[14px]">{countryFlag(p.country)}</span>
                       <input type="checkbox" checked={contacted} onChange={(e) => setContacted({ id: p._id, contacted: e.target.checked })} className="h-3.5 w-3.5 accent-sky-500 rounded-full" />
                       <input type="checkbox" checked={!!p.replied} onChange={(e) => setReplied({ id: p._id, replied: e.target.checked })} className="h-3.5 w-3.5 accent-emerald-500" />
@@ -354,7 +423,7 @@ export function ProspectsTable() {
                 </div>
               );
             })}
-            {(prospects as any[]).length > 200 && <div className="text-[11px] text-white/30 text-center py-2">+ {(prospects as any[]).length - 200} autres — filtre ou passe sur desktop</div>}
+            {(sorted as any[]).length > 200 && <div className="text-[11px] text-white/30 text-center py-2">+ {(sorted as any[]).length - 200} autres — filtre ou passe sur desktop</div>}
           </div>
         </>
       )}

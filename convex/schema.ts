@@ -24,6 +24,7 @@ export default defineSchema({
     repliedAt: v.optional(v.number()),
     emailVerified: v.boolean(),
     createdAt: v.number(),
+    addedAt: v.optional(v.number()),
     lastContactedAt: v.optional(v.number()),
     notes: v.optional(v.string()),
   })
