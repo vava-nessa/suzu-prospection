@@ -33,8 +33,7 @@ function countryFlag(code?: string): string {
 }
 
 function displayName(p: any): string {
-  const n = [p.firstName, p.lastName].filter(Boolean).join(" ").trim();
-  if (n) return n;
+  if (p.firstName) return p.firstName;
   if (p.githubUsername) return p.githubUsername;
   return p.email.split("@")[0];
 }
