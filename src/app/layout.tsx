@@ -1,6 +1,7 @@
+
 import type { Metadata } from "next";
 import "./globals.css";
-import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
+import { ConvexClientProvider } from "@/components/ConvexClientProvider";
 
 export const metadata: Metadata = {
   title: "Suzu Prospection — CRM",
@@ -9,10 +10,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <ConvexAuthNextjsServerProvider>
-      <html lang="fr" className="dark h-full antialiased">
-        <body className="min-h-full flex flex-col bg-background text-foreground">{children}</body>
-      </html>
-    </ConvexAuthNextjsServerProvider>
+    <html lang="fr" className="dark h-full antialiased">
+      <body className="min-h-full flex flex-col bg-background text-foreground">
+        <ConvexClientProvider>{children}</ConvexClientProvider>
+      </body>
+    </html>
   );
 }
