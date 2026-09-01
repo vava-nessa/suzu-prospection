@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AddProspectDialog } from "@/components/AddProspectDialog";
-import { Search, MoreHorizontal, Trash2, ExternalLink, Globe } from "lucide-react";
+import { Search, MoreHorizontal, Trash2, ExternalLink, Globe, Copy, Check } from "lucide-react";
 
 function GithubIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -26,7 +26,7 @@ function GithubIcon(props: React.SVGProps<SVGSVGElement>) {
 function countryFlag(code?: string): string {
   const c = (code ?? "").trim().toUpperCase();
   if (c.length !== 2) return "🌍";
-  const map: Record<string, string> = { FR: "🇫🇷", US: "🇺🇸", GB: "🇬🇧", DE: "🇩🇪", ES: "🇪🇸", CA: "🇨🇦", BE: "🇧🇪", CH: "🇨🇭", NL: "🇳🇱", IT: "🇮🇹", PL: "🇵🇱", PT: "🇵🇹", IE: "🇮🇪", IL: "🇮🇱", AU: "🇦🇺", BR: "🇧🇷", IN: "🇮🇳", MX: "🇲🇽", SE: "🇸🇪", DK: "🇩🇰", NO: "🇳🇴", JP: "🇯🇵", KR: "🇰🇷" };
+  const map: Record<string, string> = { FR: "🇫🇷", US: "🇺🇸", GB: "🇬🇧", DE: "🇩🇪", ES: "🇪🇸", CA: "🇨🇦", BE: "🇧🇪", CH: "🇨🇭", NL: "🇳🇱", IT: "🇮🇹", PL: "🇵🇱", PT: "🇵🇹", IE: "🇮🇪", IL: "🇮🇱", AU: "🇦🇺", BR: "🇧🇷", IN: "🇮🇳", PK: "🇵🇰", EG: "🇪🇬", NG: "🇳🇬", MX: "🇲🇽", SE: "🇸🇪", DK: "🇩🇰", NO: "🇳🇴", JP: "🇯🇵", KR: "🇰🇷" };
   if (map[c]) return map[c];
   const A = "A".charCodeAt(0);
   return String.fromCodePoint(...[...c].map((ch) => 0x1f1e6 + (ch.charCodeAt(0) - A)));
@@ -50,7 +50,7 @@ function rowBg(p: any): string {
   return "bg-transparent hover:bg-white/[0.025]";
 }
 
-const COUNTRIES = ["all", "FR", "US", "DE", "GB", "ES", "CA", "BE", "CH", "NL", "IT"];
+const COUNTRIES = ["all", "FR", "US", "DE", "GB", "ES", "CA", "BE", "CH", "NL", "IT", "IN", "PK", "EG", "NG"];
 
 function isConvexConfigured() {
   return !!process.env.NEXT_PUBLIC_CONVEX_URL;
@@ -64,6 +64,9 @@ export function ProspectsTable() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
+  const [editingHookId, setEditingHookId] = useState<string | null>(null);
+  const [editingHook, setEditingHook] = useState("");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const handleSearchChange = (v: string) => {
     setSearch(v);
@@ -102,7 +105,7 @@ export function ProspectsTable() {
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/20" />
           <Input
-            placeholder="Nom, email, GitHub, site…"
+            placeholder="Nom, email, GitHub, site, about…"
             value={search}
             onChange={(e) => handleSearchChange(e.target.value)}
             className="h-7 pl-8 bg-[#0c0c0c] border-white/[0.07] text-[12px] placeholder:text-white/20 focus-visible:border-white/15 focus-visible:ring-0"
@@ -153,6 +156,7 @@ export function ProspectsTable() {
                 <thead>
                   <tr className="border-b border-white/[0.06] bg-white/[0.03]">
                     <th className="px-2.5 py-2 text-[10px] font-[500] tracking-[0.08em] uppercase text-white/30">Nom</th>
+                    <th className="px-2.5 py-2 text-[10px] font-[500] tracking-[0.08em] uppercase text-white/30">About</th>
                     <th className="px-2.5 py-2 text-[10px] font-[500] tracking-[0.08em] uppercase text-white/30">Site</th>
                     <th className="px-2.5 py-2 text-[10px] font-[500] tracking-[0.08em] uppercase text-white/30">Email</th>
                     <th className="px-2.5 py-2 text-[10px] font-[500] tracking-[0.08em] uppercase text-white/30">GitHub</th>
@@ -165,10 +169,12 @@ export function ProspectsTable() {
                 <tbody className="divide-y divide-white/[0.04]">
                   {prospects.map((p: any) => {
                     const contacted = p.status === "contacted" || p.status === "sent" || p.status === "replied";
+                    const hook: string = p.personalizationHook ?? "";
+                    const pitch = hook ? `I visited your website and was impressed by ${hook.charAt(0).toLowerCase() + hook.slice(1)} — would love to offer you free access to Suzu.` : "";
                     return (
                       <tr key={p._id} className={`transition-colors ${rowBg(p)}`}>
                         <td
-                          className="px-2.5 py-1.5"
+                          className="px-2.5 py-1.5 align-top"
                           onDoubleClick={() => {
                             setEditingId(p._id);
                             setEditingName(displayName(p));
@@ -198,7 +204,52 @@ export function ProspectsTable() {
                             <span className="text-[12px] font-[500] tracking-[-0.01em] text-white/85 cursor-text select-none hover:text-white">{displayName(p)}</span>
                           )}
                         </td>
-                        <td className="px-2.5 py-1.5">
+                        <td
+                          className="px-2.5 py-1.5 align-top max-w-[280px]"
+                          onDoubleClick={() => {
+                            setEditingHookId(p._id);
+                            setEditingHook(hook);
+                          }}
+                          title={hook ? `${hook}\n\nDouble-clique pour éditer` : "Double-clique pour ajouter un About"}
+                        >
+                          {editingHookId === p._id ? (
+                            <input
+                              autoFocus
+                              value={editingHook}
+                              onChange={(e) => setEditingHook(e.target.value)}
+                              onBlur={async () => {
+                                const v = editingHook.trim();
+                                if (v !== hook) await updateProspect({ id: p._id, personalizationHook: v || undefined });
+                                setEditingHookId(null);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                                if (e.key === "Escape") setEditingHookId(null);
+                              }}
+                              className="h-6 w-[260px] bg-[#161616] border border-white/20 rounded-[6px] px-1.5 text-[11px] tracking-[-0.01em] text-white placeholder:text-white/20 focus:outline-none focus:border-white/30"
+                              placeholder="About — ex: builds SaaS with Next.js…"
+                            />
+                          ) : hook ? (
+                            <div className="group flex items-start gap-1.5">
+                              <span className="text-[11px] leading-[1.35] tracking-[-0.01em] text-white/45 line-clamp-2 cursor-text select-none group-hover:text-white/65">{hook}</span>
+                              <button
+                                title="Copier pitch personnalisé"
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  await navigator.clipboard.writeText(`Hey ${displayName(p)}, ${pitch}`);
+                                  setCopiedId(p._id);
+                                  setTimeout(() => setCopiedId(null), 1500);
+                                }}
+                                className="shrink-0 mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-[5px] border border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.08] text-white/30 hover:text-white/70"
+                              >
+                                {copiedId === p._id ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-white/15 cursor-text">—</span>
+                          )}
+                        </td>
+                        <td className="px-2.5 py-1.5 align-top">
                           {p.website ? (
                             <a href={p.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] tracking-[-0.01em] text-white/40 hover:text-white">
                               <Globe className="h-3 w-3 shrink-0" />
@@ -208,12 +259,12 @@ export function ProspectsTable() {
                             <span className="text-[11px] text-white/15">—</span>
                           )}
                         </td>
-                        <td className="px-2.5 py-1.5">
+                        <td className="px-2.5 py-1.5 align-top">
                           <a href={`mailto:${p.email}`} className="text-[11px] tracking-[-0.01em] text-white/55 hover:text-white underline decoration-white/10 underline-offset-4">
                             {p.email}
                           </a>
                         </td>
-                        <td className="px-2.5 py-1.5">
+                        <td className="px-2.5 py-1.5 align-top">
                           {p.githubUsername ? (
                             <a href={`https://github.com/${p.githubUsername}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] tracking-[-0.01em] text-white/55 hover:text-white">
                               <GithubIcon className="h-3 w-3" />{p.githubUsername}
@@ -222,13 +273,13 @@ export function ProspectsTable() {
                             <span className="text-[11px] text-white/15">—</span>
                           )}
                         </td>
-                        <td className="px-2.5 py-1.5 text-center">
+                        <td className="px-2.5 py-1.5 text-center align-top">
                           <span className="inline-flex items-center gap-1 text-[11px]">
                             <span className="text-[13px] leading-none">{countryFlag(p.country)}</span>
                             <span className="text-white/50 font-[500]">{(p.country ?? "—").toUpperCase()}</span>
                           </span>
                         </td>
-                        <td className="px-2.5 py-1.5 text-center">
+                        <td className="px-2.5 py-1.5 text-center align-top">
                           <input
                             type="checkbox"
                             checked={contacted}
@@ -237,7 +288,7 @@ export function ProspectsTable() {
                             title="Contacté = bleu"
                           />
                         </td>
-                        <td className="px-2.5 py-1.5 text-center">
+                        <td className="px-2.5 py-1.5 text-center align-top">
                           <input
                             type="checkbox"
                             checked={!!p.replied}
@@ -246,12 +297,13 @@ export function ProspectsTable() {
                             title="Réponse = vert"
                           />
                         </td>
-                        <td className="px-2.5 py-1.5">
+                        <td className="px-2.5 py-1.5 align-top">
                           <DropdownMenu>
                             <DropdownMenuTrigger render={<button className="inline-flex h-6 w-6 items-center justify-center rounded-[6px] border border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.07] text-white/40"><MoreHorizontal className="h-3 w-3" /></button>}></DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="bg-[#0f0f0f] border-white/[0.08] text-white min-w-[160px]">
                               <DropdownMenuItem onClick={() => setContacted({ id: p._id, contacted: !contacted })} className="text-[12px]">{contacted ? "Retirer contacté" : "Marquer contacté"}</DropdownMenuItem>
                               <DropdownMenuItem onClick={() => setReplied({ id: p._id, replied: !p.replied })} className="text-[12px]">{p.replied ? "Retirer réponse" : "Marquer réponse"}</DropdownMenuItem>
+                              {hook && <DropdownMenuItem onClick={async () => { await navigator.clipboard.writeText(`Hey ${displayName(p)}, ${pitch}`); setCopiedId(p._id); setTimeout(()=>setCopiedId(null),1500); }} className="text-[12px] gap-1"><Copy className="h-3 w-3" />Copier pitch</DropdownMenuItem>}
                               {p.sourceUrl && <DropdownMenuItem onClick={() => window.open(p.sourceUrl, "_blank")} className="text-[12px] gap-1"><ExternalLink className="h-3 w-3" />Source</DropdownMenuItem>}
                               <DropdownMenuItem className="text-[12px] text-red-300 focus:text-red-200 focus:bg-red-500/10" onClick={() => { if (confirm(`Supprimer ${p.email} ?`)) removeProspect({ id: p._id }); }}>
                                 <Trash2 className="h-3 w-3" /> Supprimer
@@ -266,7 +318,7 @@ export function ProspectsTable() {
               </table>
             </div>
             <div className="border-t border-white/[0.06] bg-white/[0.02] px-3 py-1.5 text-[10px] tracking-[-0.01em] text-white/25">
-              {prospects.length} · noir = non contacté · bleu = contacté · vert = réponse
+              {prospects.length} · noir = non contacté · bleu = contacté · vert = réponse · double-clic Nom/About pour éditer · 📋 copie le pitch
             </div>
           </div>
 
@@ -275,8 +327,8 @@ export function ProspectsTable() {
             {prospects.map((p: any) => {
               const contacted = p.status === "contacted" || p.status === "sent" || p.status === "replied";
               return (
-                <div key={p._id} className={`border rounded-[10px] p-3 flex items-center justify-between gap-3 ${p.replied ? "border-emerald-500/25 bg-emerald-500/[0.08]" : contacted ? "border-sky-400/25 bg-sky-500/[0.06]" : "border-white/[0.06] bg-white/[0.015]"}`}>
-                  <div className="min-w-0 flex-1">
+                <div key={p._id} className={`border rounded-[10px] p-3 flex flex-col gap-2 ${p.replied ? "border-emerald-500/25 bg-emerald-500/[0.08]" : contacted ? "border-sky-400/25 bg-sky-500/[0.06]" : "border-white/[0.06] bg-white/[0.015]"}`}>
+                  <div className="flex items-center justify-between gap-3">
                     <p
                       className="text-[12px] font-[600] tracking-[-0.02em] truncate cursor-text select-none hover:text-white"
                       onDoubleClick={() => {
@@ -307,13 +359,14 @@ export function ProspectsTable() {
                         displayName(p)
                       )}
                     </p>
-                    <p className="text-[10px] tracking-[-0.01em] text-white/35 truncate">{p.email} {p.githubUsername ? `· ${p.githubUsername}` : ""}</p>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[14px]">{countryFlag(p.country)}</span>
+                      <input type="checkbox" checked={contacted} onChange={(e) => setContacted({ id: p._id, contacted: e.target.checked })} className="h-3.5 w-3.5 accent-sky-500 rounded-full" />
+                      <input type="checkbox" checked={!!p.replied} onChange={(e) => setReplied({ id: p._id, replied: e.target.checked })} className="h-3.5 w-3.5 accent-emerald-500" />
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[14px]">{countryFlag(p.country)}</span>
-                    <input type="checkbox" checked={contacted} onChange={(e) => setContacted({ id: p._id, contacted: e.target.checked })} className="h-3.5 w-3.5 accent-sky-500 rounded-full" />
-                    <input type="checkbox" checked={!!p.replied} onChange={(e) => setReplied({ id: p._id, replied: e.target.checked })} className="h-3.5 w-3.5 accent-emerald-500" />
-                  </div>
+                  <p className="text-[10px] tracking-[-0.01em] text-white/35 truncate">{p.email} {p.githubUsername ? `· ${p.githubUsername}` : ""}</p>
+                  {p.personalizationHook && <p className="text-[11px] leading-[1.4] tracking-[-0.01em] text-white/45 line-clamp-3">{p.personalizationHook}</p>}
                 </div>
               );
             })}
